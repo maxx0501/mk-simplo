@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Store, 
   User, 
@@ -31,16 +31,17 @@ import {
 const Settings = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // Estados para as configurações
   const [storeSettings, setStoreSettings] = useState({
-    name: 'Loja Exemplo',
-    email: 'contato@lojaexemplo.com',
-    phone: '(11) 9999-9999',
-    address: 'Rua Exemplo, 123',
-    city: 'São Paulo',
-    cep: '01234-567',
-    cnpj: '12.345.678/0001-90'
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    cep: '',
+    cnpj: ''
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -61,16 +62,97 @@ const Settings = () => {
     twoFactorAuth: false
   });
 
+  useEffect(() => {
+    const loadUserData = () => {
+      const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+      setUser(userData);
+      
+      // Carregar dados da loja se existir store_id
+      if (userData.store_id) {
+        loadStoreData(userData.store_id);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  const loadStoreData = async (storeId: string) => {
+    try {
+      const { data: storeData, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .single();
+
+      if (error) {
+        console.error('Erro ao carregar dados da loja:', error);
+        return;
+      }
+
+      if (storeData) {
+        setStoreSettings({
+          name: storeData.name || '',
+          email: storeData.email || '',
+          phone: storeData.phone || '',
+          address: '',
+          city: '',
+          cep: '',
+          cnpj: storeData.cnpj || ''
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados da loja:', error);
+    }
+  };
+
   const handleSaveStoreSettings = async () => {
+    if (!user?.store_id) {
+      toast({
+        title: "Erro",
+        description: "Loja não encontrada",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
-    // Simular salvamento
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    toast({
-      title: "Configurações salvas",
-      description: "As configurações da loja foram atualizadas com sucesso."
-    });
-    setLoading(false);
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          name: storeSettings.name,
+          phone: storeSettings.phone,
+          cnpj: storeSettings.cnpj
+        })
+        .eq('id', user.store_id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Atualizar localStorage com novo nome da loja
+      const updatedUser = {
+        ...user,
+        store_name: storeSettings.name
+      };
+      localStorage.setItem('mksimplo_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      toast({
+        title: "Configurações salvas",
+        description: "As configurações da loja foram atualizadas com sucesso."
+      });
+    } catch (error: any) {
+      console.error('Erro ao salvar configurações:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Tente novamente",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveNotifications = async () => {
@@ -154,7 +236,10 @@ const Settings = () => {
                       type="email"
                       value={storeSettings.email}
                       onChange={(e) => setStoreSettings(prev => ({ ...prev, email: e.target.value }))}
+                      disabled
+                      className="bg-gray-100"
                     />
+                    <p className="text-xs text-gray-500">O email não pode ser alterado</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="store-phone">Telefone</Label>

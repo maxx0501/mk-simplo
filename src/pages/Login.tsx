@@ -16,14 +16,11 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Verificar se já está logado
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Limpar qualquer sessão existente primeiro
         await supabase.auth.signOut();
         localStorage.removeItem('mksimplo_user');
-        
         console.log('Sessão limpa, página de login pronta');
       } catch (error) {
         console.error('Erro ao limpar sessão:', error);
@@ -39,7 +36,6 @@ const Login = () => {
     try {
       console.log('Tentando fazer login com email:', email);
 
-      // Caso especial para admin de demonstração
       if (email === 'admin@mksimplo.com') {
         console.log('Login de admin demo');
         localStorage.setItem('mksimplo_user', JSON.stringify({
@@ -58,7 +54,6 @@ const Login = () => {
         return;
       }
 
-      // Fazer logout antes do login para garantir estado limpo
       await supabase.auth.signOut();
       localStorage.removeItem('mksimplo_user');
 
@@ -75,7 +70,6 @@ const Login = () => {
       console.log('Login bem-sucedido:', data);
 
       if (data.user) {
-        // Verificar se é admin da plataforma
         const { data: adminData } = await supabase
           .from('platform_admins')
           .select('*')
@@ -92,7 +86,6 @@ const Login = () => {
           }));
           navigate('/admin');
         } else {
-          // Verificar se pertence a alguma loja
           const { data: userStoreData } = await supabase
             .from('user_stores')
             .select('*, stores(*)')

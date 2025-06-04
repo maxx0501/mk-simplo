@@ -29,6 +29,7 @@ const Register = () => {
       
       // Fazer logout antes de criar nova conta para evitar conflitos
       await supabase.auth.signOut();
+      localStorage.removeItem('mksimplo_user');
       
       // Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -47,7 +48,6 @@ const Register = () => {
       if (authError) {
         console.error('Erro no registro:', authError);
         
-        // Tratar erros específicos
         if (authError.message === "User already registered") {
           toast({
             title: "Email já cadastrado",
@@ -68,7 +68,7 @@ const Register = () => {
 
       if (authData.user) {
         // Criar registro na tabela stores
-        const { error: storeError } = await supabase
+        const { data: storeData, error: storeError } = await supabase
           .from('stores')
           .insert({
             name: storeName,
@@ -79,8 +79,10 @@ const Register = () => {
             plan_type: 'trial',
             status: 'active',
             subscription_status: 'trial',
-            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 dias a partir de agora
-          });
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .select()
+          .single();
 
         if (storeError) {
           console.error('Erro ao criar loja:', storeError);
@@ -90,17 +92,9 @@ const Register = () => {
             variant: "destructive"
           });
         } else {
-          console.log('Loja criada com sucesso');
-        }
+          console.log('Loja criada com sucesso:', storeData);
 
-        // Criar registro na tabela user_stores para associar o usuário à loja
-        const { data: storeData } = await supabase
-          .from('stores')
-          .select('id')
-          .eq('email', email.trim())
-          .single();
-
-        if (storeData) {
+          // Criar registro na tabela user_stores para associar o usuário à loja
           const { error: userStoreError } = await supabase
             .from('user_stores')
             .insert({
@@ -111,19 +105,27 @@ const Register = () => {
 
           if (userStoreError) {
             console.error('Erro ao associar usuário à loja:', userStoreError);
+          } else {
+            console.log('Usuário associado à loja com sucesso');
           }
         }
 
         if (!authData.user.email_confirmed_at) {
-          // Email precisa ser confirmado
           toast({
             title: "Conta criada com sucesso!",
             description: "Verifique seu email para confirmar a conta antes de fazer login.",
           });
           navigate('/login');
         } else {
-          // Email já confirmado (modo desenvolvimento), redirecionar para dashboard
-          console.log('Email já confirmado, redirecionando para dashboard');
+          console.log('Email já confirmado, configurando sessão');
+          localStorage.setItem('mksimplo_user', JSON.stringify({
+            id: authData.user.id,
+            email: authData.user.email,
+            role: 'owner',
+            store_id: storeData?.id || null,
+            store_name: storeName
+          }));
+          
           toast({
             title: "Conta criada com sucesso!",
             description: "Bem-vindo ao MKsimplo!"
@@ -131,7 +133,6 @@ const Register = () => {
           navigate('/dashboard');
         }
       } else {
-        // Caso padrão - redirecionar para login
         toast({
           title: "Conta criada com sucesso!",
           description: "Faça login para acessar sua conta.",
@@ -171,7 +172,7 @@ const Register = () => {
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="storeName">Nome da Loja</Label>
+                <Label htmlFor="storeName">Nome da Loja *</Label>
                 <Input
                   id="storeName"
                   placeholder="Ex: Loja da Maria"
@@ -182,7 +183,7 @@ const Register = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="ownerName">Seu Nome</Label>
+                <Label htmlFor="ownerName">Seu Nome *</Label>
                 <Input
                   id="ownerName"
                   placeholder="Seu nome completo"
@@ -193,7 +194,7 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -225,7 +226,7 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password">Senha *</Label>
                 <Input
                   id="password"
                   type="password"
