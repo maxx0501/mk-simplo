@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,11 +70,20 @@ const Admin = () => {
           return;
         }
 
+        // Verificar sessão do Supabase
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !sessionData.session?.user) {
+          console.log('❌ Sessão inválida');
+          navigate('/login');
+          return;
+        }
+
         // Verificar no banco se é superadmin
         const { data: adminData, error } = await supabase
           .from('platform_admins')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', sessionData.session.user.id)
           .maybeSingle();
 
         if (error) {
@@ -110,25 +118,46 @@ const Admin = () => {
     try {
       console.log('🔍 Carregando todas as lojas da tabela stores...');
       
-      // Buscar TODAS as lojas diretamente da tabela stores
-      const { data: storesData, error } = await supabase
-        .from('stores')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Buscar TODAS as lojas diretamente da tabela stores usando RPC para contornar RLS
+      const { data: storesData, error } = await supabase.rpc('get_all_stores_admin');
 
-      console.log('📊 Resultado da consulta stores:', {
+      if (error) {
+        console.log('⚠️ Erro na função RPC, tentando consulta direta...');
+        
+        // Se a função RPC falhar, tentar consulta direta
+        const { data: directData, error: directError } = await supabase
+          .from('stores')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (directError) {
+          console.error('❌ Erro na consulta direta:', directError);
+          throw directError;
+        }
+
+        console.log('📊 Resultado da consulta direta stores:', {
+          encontradas: directData?.length || 0,
+          dados: directData
+        });
+
+        if (directData && directData.length > 0) {
+          console.log('✅ Lojas encontradas via consulta direta:', directData.length);
+          setStores(directData);
+        } else {
+          console.log('📭 Nenhuma loja encontrada na tabela stores');
+          setStores([]);
+        }
+
+        return directData?.length || 0;
+      }
+
+      console.log('📊 Resultado da função RPC stores:', {
         encontradas: storesData?.length || 0,
-        erro: error?.message || 'Nenhum',
         dados: storesData
       });
 
-      if (error) {
-        console.error('❌ Erro ao buscar lojas:', error);
-        throw error;
-      }
-
       if (storesData && storesData.length > 0) {
-        console.log('✅ Lojas encontradas:', storesData.length);
+        console.log('✅ Lojas encontradas via RPC:', storesData.length);
         setStores(storesData);
       } else {
         console.log('📭 Nenhuma loja encontrada na tabela stores');
