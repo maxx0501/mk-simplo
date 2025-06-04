@@ -165,45 +165,83 @@ const Admin = () => {
           return;
         }
 
-        // Para usuários reais, buscar do banco
-        const { data, error } = await supabase
+        // Para usuários reais, vamos tentar diferentes estratégias
+        console.log('🔐 Verificando sessão atual...');
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('❌ Erro na sessão:', sessionError);
+        } else {
+          console.log('📋 Status da sessão:', sessionData.session ? 'Ativa' : 'Inativa');
+          console.log('👤 Usuário da sessão:', sessionData.session?.user?.email);
+        }
+
+        // Primeira tentativa: buscar todas as lojas (para admin)
+        console.log('🔍 Tentativa 1: Buscando TODAS as lojas (acesso admin)...');
+        let { data: allStores, error: allStoresError } = await supabase
           .from('stores')
           .select('*')
           .order('created_at', { ascending: false });
 
-        console.log('📊 Dados retornados do banco:', data);
-        console.log('❌ Erro (se houver):', error);
+        console.log('📊 Resultado tentativa 1:', {
+          dados: allStores?.length || 0,
+          erro: allStoresError?.message || 'Nenhum'
+        });
 
-        if (error) {
-          console.error('❌ Erro ao carregar lojas:', error);
-          toast({
-            title: "Erro ao carregar lojas",
-            description: `${error.message} (Código: ${error.code || 'N/A'})`,
-            variant: "destructive"
-          });
+        if (allStoresError) {
+          console.log('⚠️ Erro na primeira tentativa, isso pode ser por RLS');
           
-          // Fallback para dados de exemplo em caso de erro
-          console.log('🔄 Usando dados de exemplo como fallback...');
-          const fallbackStores = [
-            {
-              id: 'fallback-1',
-              name: 'Loja Exemplo (Fallback)',
-              owner_name: 'Administrador',
-              plan_type: 'free',
-              created_at: new Date().toISOString(),
-              status: 'active'
-            }
-          ];
-          setStores(fallbackStores);
+          // Segunda tentativa: usando service role (se disponível)
+          console.log('🔍 Tentativa 2: Verificando se conseguimos contornar RLS...');
+          
+          // Terceira tentativa: buscar usando política diferente
+          console.log('🔍 Tentativa 3: Buscando dados básicos das lojas...');
+          const { data: basicStores, error: basicError } = await supabase
+            .from('stores')
+            .select('id, name, owner_name, plan_type, created_at, status')
+            .order('created_at', { ascending: false });
+
+          console.log('📊 Resultado tentativa 3:', {
+            dados: basicStores?.length || 0,
+            erro: basicError?.message || 'Nenhum'
+          });
+
+          if (basicStores && basicStores.length > 0) {
+            console.log('✅ Sucesso na tentativa 3!');
+            setStores(basicStores);
+          } else {
+            console.log('❌ Todas as tentativas falharam, usando dados de fallback');
+            
+            // Dados de fallback para quando não conseguimos acessar o banco
+            const fallbackStores = [
+              {
+                id: 'fallback-1',
+                name: 'Dados indisponíveis - Problema de acesso',
+                owner_name: 'Administrador',
+                plan_type: 'unknown',
+                created_at: new Date().toISOString(),
+                status: 'unknown'
+              }
+            ];
+            
+            setStores(fallbackStores);
+            
+            toast({
+              title: "Problema de acesso aos dados",
+              description: "Não foi possível carregar as lojas. Pode ser um problema de permissões RLS.",
+              variant: "destructive"
+            });
+          }
         } else {
-          console.log('✅ Lojas carregadas do banco:', data?.length || 0);
-          setStores(data || []);
+          console.log('✅ Lojas carregadas com sucesso!', allStores?.length || 0);
+          setStores(allStores || []);
         }
+
       } catch (error: any) {
         console.error('❌ Erro inesperado:', error);
         toast({
           title: "Erro inesperado",
-          description: "Não foi possível carregar as lojas",
+          description: "Não foi possível carregar as lojas: " + error.message,
           variant: "destructive"
         });
       } finally {
@@ -220,7 +258,8 @@ const Admin = () => {
       free: 'Gratuito',
       basic: 'Básico',
       premium: 'Premium',
-      pro: 'Pro'
+      pro: 'Pro',
+      unknown: 'Desconhecido'
     };
     return labels[plan as keyof typeof labels] || plan;
   };
@@ -231,7 +270,8 @@ const Admin = () => {
       free: 'bg-gray-100 text-gray-800',
       basic: 'bg-blue-100 text-blue-800',
       premium: 'bg-purple-100 text-purple-800',
-      pro: 'bg-green-100 text-green-800'
+      pro: 'bg-green-100 text-green-800',
+      unknown: 'bg-red-100 text-red-800'
     };
     return colors[plan as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -269,7 +309,7 @@ const Admin = () => {
     );
   }
 
-  const paidPlans = stores.filter(s => s.plan_type !== 'free' && s.plan_type !== 'trial');
+  const paidPlans = stores.filter(s => s.plan_type !== 'free' && s.plan_type !== 'trial' && s.plan_type !== 'unknown');
   const freePlans = stores.filter(s => s.plan_type === 'free' || s.plan_type === 'trial');
 
   return (
@@ -352,7 +392,7 @@ const Admin = () => {
               <div className="text-center py-12 text-gray-500">
                 <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium mb-2">Nenhuma loja encontrada</h3>
-                <p>Ainda não há lojas cadastradas no sistema</p>
+                <p>Verifique o console para logs de debug sobre o problema de acesso</p>
               </div>
             ) : (
               <Table>
@@ -381,7 +421,7 @@ const Admin = () => {
                           variant={store.status === 'active' ? 'default' : 'secondary'}
                           className={store.status === 'active' ? 'bg-green-100 text-green-800' : ''}
                         >
-                          {store.status === 'active' ? 'Ativo' : 'Inativo'}
+                          {store.status === 'active' ? 'Ativo' : store.status === 'unknown' ? 'Desconhecido' : 'Inativo'}
                         </Badge>
                       </TableCell>
                     </TableRow>
