@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Store, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -19,37 +20,63 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulação de login (aqui integraria com Supabase)
     try {
-      if (email === 'admin@mksimplo.com') {
-        // Login como superadmin
-        localStorage.setItem('mksimplo_user', JSON.stringify({
-          id: 'admin',
-          email: 'admin@mksimplo.com',
-          role: 'superadmin',
-          store_id: null
-        }));
-        navigate('/admin');
-      } else {
-        // Login como loja
-        localStorage.setItem('mksimplo_user', JSON.stringify({
-          id: '1',
-          email: email,
-          role: 'owner',
-          store_id: '1',
-          store_name: 'Loja Exemplo'
-        }));
-        navigate('/dashboard');
-      }
-      
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao MKsimplo"
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-    } catch (error) {
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Verificar se é admin da plataforma
+        const { data: adminData } = await supabase
+          .from('platform_admins')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (adminData) {
+          // É admin da plataforma
+          localStorage.setItem('mksimplo_user', JSON.stringify({
+            id: data.user.id,
+            email: data.user.email,
+            role: 'superadmin',
+            store_id: null
+          }));
+          navigate('/admin');
+        } else {
+          // Verificar se pertence a alguma loja
+          const { data: userStoreData } = await supabase
+            .from('user_stores')
+            .select('*, stores(*)')
+            .eq('user_id', data.user.id)
+            .single();
+
+          if (userStoreData && userStoreData.stores) {
+            localStorage.setItem('mksimplo_user', JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              role: userStoreData.role,
+              store_id: userStoreData.store_id,
+              store_name: userStoreData.stores.name
+            }));
+            navigate('/dashboard');
+          } else {
+            throw new Error('Usuário não possui acesso a nenhuma loja');
+          }
+        }
+
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao MKsimplo"
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro no login:', error);
       toast({
         title: "Erro no login",
-        description: "Email ou senha incorretos",
+        description: error.message || "Email ou senha incorretos",
         variant: "destructive"
       });
     } finally {
@@ -118,7 +145,6 @@ const Login = () => {
 
             <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
               <p className="font-medium">Para testar:</p>
-              <p>• Loja: qualquer@email.com</p>
               <p>• Admin: admin@mksimplo.com</p>
               <p>• Senha: qualquer</p>
             </div>

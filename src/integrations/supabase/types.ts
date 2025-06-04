@@ -9,13 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      platform_admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          owner_name: string
+          phone: string | null
+          plan_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          owner_name: string
+          phone?: string | null
+          plan_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          owner_name?: string
+          phone?: string | null
+          plan_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_stores: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stores_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_platform_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
