@@ -4,6 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+// Função para gerar nomes únicos de lojas
+const generateUniqueStoreName = (email: string) => {
+  const baseNames = [
+    'Loja Premium', 'MegaStore', 'Super Market', 'Elite Store', 'Top Shopping',
+    'Nova Loja', 'Best Store', 'Quick Shop', 'Smart Store', 'Fast Market',
+    'Modern Store', 'City Shop', 'Express Store', 'Prime Market', 'Blue Store'
+  ];
+  
+  const emailPrefix = email.split('@')[0];
+  const randomName = baseNames[Math.floor(Math.random() * baseNames.length)];
+  const randomNumber = Math.floor(Math.random() * 1000);
+  
+  return `${randomName} ${emailPrefix.charAt(0).toUpperCase()}${emailPrefix.slice(1)} ${randomNumber}`;
+};
+
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -83,13 +98,49 @@ export const useAuth = () => {
               store_name: userStoreData.stores.name
             }));
           } else {
-            console.log('Usuário não possui loja, configurando dados básicos');
+            // Criar uma nova loja para o usuário com nome único
+            console.log('Criando nova loja para o usuário');
+            const uniqueStoreName = generateUniqueStoreName(data.user.email || '');
+            
+            const { data: newStore, error: storeError } = await supabase
+              .from('stores')
+              .insert({
+                name: uniqueStoreName,
+                email: data.user.email,
+                owner_name: data.user.email?.split('@')[0] || 'Usuário',
+                plan_type: 'free',
+                subscription_status: 'trial',
+                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              })
+              .select()
+              .single();
+
+            if (storeError) {
+              console.error('Erro ao criar loja:', storeError);
+              throw storeError;
+            }
+
+            // Associar usuário à loja
+            const { error: userStoreError } = await supabase
+              .from('user_stores')
+              .insert({
+                user_id: data.user.id,
+                store_id: newStore.id,
+                role: 'owner'
+              });
+
+            if (userStoreError) {
+              console.error('Erro ao associar usuário à loja:', userStoreError);
+              throw userStoreError;
+            }
+
+            console.log('Nova loja criada:', uniqueStoreName);
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,
               role: 'owner',
-              store_id: null,
-              store_name: null
+              store_id: newStore.id,
+              store_name: uniqueStoreName
             }));
           }
           navigate('/dashboard');

@@ -115,13 +115,22 @@ const Settings = () => {
       return;
     }
 
+    if (!storeSettings.name.trim()) {
+      toast({
+        title: "Erro",
+        description: "O nome da loja é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
       const { error } = await supabase
         .from('stores')
         .update({
-          name: storeSettings.name,
+          name: storeSettings.name.trim(),
           phone: storeSettings.phone,
           cnpj: storeSettings.cnpj
         })
@@ -134,10 +143,13 @@ const Settings = () => {
       // Atualizar localStorage com novo nome da loja
       const updatedUser = {
         ...user,
-        store_name: storeSettings.name
+        store_name: storeSettings.name.trim()
       };
       localStorage.setItem('mksimplo_user', JSON.stringify(updatedUser));
       setUser(updatedUser);
+
+      // Forçar atualização da sidebar
+      window.dispatchEvent(new Event('storage'));
 
       toast({
         title: "Configurações salvas",
@@ -222,11 +234,13 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="store-name">Nome da Loja</Label>
+                    <Label htmlFor="store-name">Nome da Loja *</Label>
                     <Input
                       id="store-name"
                       value={storeSettings.name}
                       onChange={(e) => setStoreSettings(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Digite o nome da sua loja"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -247,6 +261,7 @@ const Settings = () => {
                       id="store-phone"
                       value={storeSettings.phone}
                       onChange={(e) => setStoreSettings(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="(11) 99999-9999"
                     />
                   </div>
                   <div className="space-y-2">
@@ -255,6 +270,7 @@ const Settings = () => {
                       id="store-cnpj"
                       value={storeSettings.cnpj}
                       onChange={(e) => setStoreSettings(prev => ({ ...prev, cnpj: e.target.value }))}
+                      placeholder="00.000.000/0000-00"
                     />
                   </div>
                   <div className="space-y-2">
@@ -263,6 +279,7 @@ const Settings = () => {
                       id="store-address"
                       value={storeSettings.address}
                       onChange={(e) => setStoreSettings(prev => ({ ...prev, address: e.target.value }))}
+                      placeholder="Rua, número, bairro"
                     />
                   </div>
                   <div className="space-y-2">
@@ -271,6 +288,7 @@ const Settings = () => {
                       id="store-city"
                       value={storeSettings.city}
                       onChange={(e) => setStoreSettings(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="Cidade - UF"
                     />
                   </div>
                 </div>
@@ -278,7 +296,10 @@ const Settings = () => {
                 <Separator />
                 
                 <div className="flex justify-end">
-                  <Button onClick={handleSaveStoreSettings} disabled={loading}>
+                  <Button 
+                    onClick={handleSaveStoreSettings} 
+                    disabled={loading || !storeSettings.name.trim()}
+                  >
                     {loading ? 'Salvando...' : 'Salvar Configurações'}
                   </Button>
                 </div>

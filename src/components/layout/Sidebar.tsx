@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,28 @@ const navigationItems = [
 export const Sidebar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUser = () => {
+      const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+      setUser(userData);
+    };
+
+    // Carregar dados do usuário
+    loadUser();
+
+    // Escutar mudanças no localStorage (quando o nome da loja é atualizado)
+    const handleStorageChange = () => {
+      loadUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -79,8 +101,6 @@ export const Sidebar = () => {
     }
   };
 
-  const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
       <div className="flex flex-col flex-grow">
@@ -96,7 +116,7 @@ export const Sidebar = () => {
             Loja
           </p>
           <p className="text-sm font-medium text-sidebar-foreground mt-1">
-            {user.store_name || 'Sem loja definida'}
+            {user?.store_name || 'Sem loja definida'}
           </p>
         </div>
 
@@ -130,10 +150,10 @@ export const Sidebar = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-sidebar-foreground">
-                  {user.email}
+                  {user?.email}
                 </p>
                 <p className="text-xs font-medium text-sidebar-foreground/70">
-                  {user.role === 'owner' ? 'Proprietário' : 'Vendedor'}
+                  {user?.role === 'owner' ? 'Proprietário' : 'Vendedor'}
                 </p>
               </div>
               <Button
