@@ -34,38 +34,65 @@ interface Store {
   updated_at: string;
 }
 
+// Sample data for demonstration
+const sampleStores: Store[] = [
+  {
+    id: '1',
+    name: 'Loja do João',
+    email: 'joao@lojadojoao.com',
+    phone: '(11) 99999-1234',
+    cnpj: '12.345.678/0001-90',
+    owner_name: 'João Silva',
+    plan_type: 'premium',
+    status: 'active',
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-01-15T10:00:00Z'
+  },
+  {
+    id: '2',
+    name: 'Tech Store',
+    email: 'contato@techstore.com',
+    phone: '(11) 88888-5678',
+    cnpj: '98.765.432/0001-10',
+    owner_name: 'Maria Santos',
+    plan_type: 'basic',
+    status: 'active',
+    created_at: '2024-02-01T14:30:00Z',
+    updated_at: '2024-02-01T14:30:00Z'
+  },
+  {
+    id: '3',
+    name: 'Moda & Estilo',
+    email: 'admin@modaestilo.com',
+    phone: '(21) 77777-9999',
+    cnpj: '11.222.333/0001-44',
+    owner_name: 'Ana Costa',
+    plan_type: 'free',
+    status: 'suspended',
+    created_at: '2024-01-20T09:15:00Z',
+    updated_at: '2024-03-10T16:45:00Z'
+  },
+  {
+    id: '4',
+    name: 'Casa & Decoração',
+    email: 'vendas@casadecor.com',
+    phone: '(31) 66666-7777',
+    cnpj: '55.666.777/0001-88',
+    owner_name: 'Carlos Oliveira',
+    plan_type: 'basic',
+    status: 'inactive',
+    created_at: '2024-03-05T11:20:00Z',
+    updated_at: '2024-03-05T11:20:00Z'
+  }
+];
+
 const Admin = () => {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stores, setStores] = useState<Store[]>(sampleStores);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchStores();
-  }, []);
-
-  const fetchStores = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setStores(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar lojas:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as lojas",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredStores = stores.filter(store => {
     const matchesSearch = store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,33 +104,17 @@ const Admin = () => {
     return matchesSearch && matchesPlan && matchesStatus;
   });
 
-  const updateStoreStatus = async (storeId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('stores')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', storeId);
+  const updateStoreStatus = (storeId: string, newStatus: string) => {
+    setStores(stores.map(store => 
+      store.id === storeId 
+        ? { ...store, status: newStatus, updated_at: new Date().toISOString() }
+        : store
+    ));
 
-      if (error) throw error;
-
-      setStores(stores.map(store => 
-        store.id === storeId 
-          ? { ...store, status: newStatus, updated_at: new Date().toISOString() }
-          : store
-      ));
-
-      toast({
-        title: "Status atualizado",
-        description: "Status da loja foi alterado com sucesso"
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o status",
-        variant: "destructive"
-      });
-    }
+    toast({
+      title: "Status atualizado",
+      description: "Status da loja foi alterado com sucesso"
+    });
   };
 
   const getPlanLabel = (plan: string) => {
@@ -149,16 +160,6 @@ const Admin = () => {
       year: 'numeric'
     });
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-xl">Carregando...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

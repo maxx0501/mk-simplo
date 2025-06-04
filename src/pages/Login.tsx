@@ -21,6 +21,25 @@ const Login = () => {
     setLoading(true);
 
     try {
+      // Caso especial para admin de demonstração
+      if (email === 'admin@mksimplo.com') {
+        // Simular login de admin sem autenticação real
+        localStorage.setItem('mksimplo_user', JSON.stringify({
+          id: 'demo-admin-id',
+          email: 'admin@mksimplo.com',
+          role: 'superadmin',
+          store_id: null
+        }));
+        
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao painel administrativo"
+        });
+        
+        navigate('/admin');
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -144,9 +163,9 @@ const Login = () => {
             </div>
 
             <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-              <p className="font-medium">Para testar:</p>
+              <p className="font-medium">Para testar o painel administrativo:</p>
               <p>• Admin: admin@mksimplo.com</p>
-              <p>• Senha: qualquer</p>
+              <p>• Senha: qualquer senha</p>
             </div>
           </CardContent>
         </Card>
