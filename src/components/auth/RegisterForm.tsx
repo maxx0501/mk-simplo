@@ -20,7 +20,16 @@ export const RegisterForm = () => {
     const success = await handleRegister(storeName, ownerName, email, password);
     
     if (success) {
-      navigate('/login');
+      // Limpar formulário
+      setStoreName('');
+      setOwnerName('');
+      setEmail('');
+      setPassword('');
+      
+      // Aguardar um pouco e redirecionar para login
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     }
   };
 
@@ -34,6 +43,7 @@ export const RegisterForm = () => {
           value={storeName}
           onChange={(e) => setStoreName(e.target.value)}
           required
+          disabled={loading}
         />
       </div>
       
@@ -45,6 +55,7 @@ export const RegisterForm = () => {
           value={ownerName}
           onChange={(e) => setOwnerName(e.target.value)}
           required
+          disabled={loading}
         />
       </div>
 
@@ -57,6 +68,7 @@ export const RegisterForm = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={loading}
         />
       </div>
 
@@ -70,6 +82,7 @@ export const RegisterForm = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
+          disabled={loading}
         />
       </div>
 
@@ -80,6 +93,11 @@ export const RegisterForm = () => {
       >
         {loading ? 'Criando conta...' : 'Criar conta grátis'}
       </Button>
+      
+      <div className="text-sm text-gray-600 text-center">
+        <p>Ao criar sua conta, você receberá um email de confirmação.</p>
+        <p>Confirme seu email antes de fazer login.</p>
+      </div>
     </form>
   );
 };

@@ -26,7 +26,7 @@ const Register = () => {
             </div>
             <CardTitle className="text-2xl">Criar conta no MKsimplo</CardTitle>
             <CardDescription>
-              Comece grátis a gerenciar sua loja
+              Crie sua conta e comece a gerenciar sua loja
             </CardDescription>
           </CardHeader>
           <CardContent>
