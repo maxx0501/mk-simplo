@@ -1,41 +1,61 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
-import { 
   Download, 
-  TrendingUp, 
   DollarSign, 
   ShoppingCart, 
   Package, 
   Users,
-  FileText 
+  FileText,
+  Store 
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Reports() {
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('30');
+  const [user, setUser] = useState<any>(null);
 
-  // Dados vazios - sistema limpo
-  const salesData: any[] = [];
-  const categoryData: any[] = [];
-  const dailySales: any[] = [];
-  const topProducts: any[] = [];
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
+  }, []);
+
+  // Se o usuário não tem loja, mostrar tela de criação
+  if (!user?.store_id) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Store className="h-12 w-12 text-blue-600" />
+              </div>
+              <CardTitle className="text-2xl">Bem-vindo ao MKsimplo!</CardTitle>
+              <CardDescription>
+                Você ainda não tem uma loja cadastrada. Crie sua primeira loja para começar a usar o sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button 
+                onClick={() => navigate('/settings')}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Criar Minha Primeira Loja
+              </Button>
+              <p className="text-sm text-gray-500 mt-3">
+                Você pode criar sua loja nas configurações do sistema
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -131,90 +151,17 @@ export default function Reports() {
               Comece registrando vendas e produtos para ver análises detalhadas aqui
             </p>
             <div className="flex justify-center space-x-4">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => navigate('/products')}>
                 <Package className="w-4 h-4 mr-2" />
                 Cadastrar Produtos
               </Button>
-              <Button>
+              <Button onClick={() => navigate('/sales')}>
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Registrar Venda
               </Button>
             </div>
           </CardContent>
         </Card>
-
-        {/* Placeholder para gráficos vazios */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendas Mensais</CardTitle>
-              <CardDescription>
-                Comparativo de vendas e produtos vendidos por mês
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <BarChart className="h-12 w-12 mx-auto mb-2" />
-                  <p>Dados aparecerão quando houver vendas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendas por Categoria</CardTitle>
-              <CardDescription>
-                Distribuição de vendas por categoria de produto
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <Package className="h-12 w-12 mx-auto mb-2" />
-                  <p>Cadastre produtos com categorias</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendas da Semana</CardTitle>
-              <CardDescription>
-                Desempenho de vendas por dia da semana
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-2" />
-                  <p>Histórico aparecerá com as vendas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Produtos Mais Vendidos</CardTitle>
-              <CardDescription>
-                Os 5 produtos com melhor desempenho no período
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-2" />
-                  <p>Ranking aparecerá com as vendas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </DashboardLayout>
   );

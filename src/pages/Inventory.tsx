@@ -1,102 +1,51 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  ArrowUp, 
-  ArrowDown, 
-  AlertTriangle,
-  Package
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface StockItem {
-  id: string;
-  product_name: string;
-  sku: string;
-  current_stock: number;
-  min_stock: number;
-  max_stock: number;
-  location: string;
-  last_updated: string;
-}
+import { Button } from '@/components/ui/button';
+import { Package, AlertTriangle, Store } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Inventory() {
-  const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
-  const [adjustmentReason, setAdjustmentReason] = useState('');
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
 
-  // Estado vazio - sistema limpo
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
+  }, []);
 
-  const filteredItems = stockItems.filter(item =>
-    item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getStockStatus = (item: StockItem) => {
-    if (item.current_stock <= item.min_stock) {
-      return { status: 'Estoque Baixo', variant: 'destructive' as const };
-    }
-    if (item.current_stock >= item.max_stock) {
-      return { status: 'Estoque Alto', variant: 'secondary' as const };
-    }
-    return { status: 'Normal', variant: 'default' as const };
-  };
-
-  const handleStockAdjustment = (type: 'increase' | 'decrease') => {
-    if (!selectedItem || !adjustmentQuantity) {
-      toast({
-        title: "Erro",
-        description: "Selecione um produto e informe a quantidade.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const quantity = parseInt(adjustmentQuantity);
-    const newStock = type === 'increase' 
-      ? selectedItem.current_stock + quantity
-      : selectedItem.current_stock - quantity;
-
-    if (newStock < 0) {
-      toast({
-        title: "Erro",
-        description: "Estoque não pode ficar negativo.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setStockItems(prev => prev.map(item => 
-      item.id === selectedItem.id 
-        ? { ...item, current_stock: newStock, last_updated: new Date().toISOString().split('T')[0] }
-        : item
-    ));
-
-    toast({
-      title: "Estoque Atualizado",
-      description: `${type === 'increase' ? 'Adicionado' : 'Removido'} ${quantity} unidades de ${selectedItem.product_name}.`
-    });
-
-    setSelectedItem(null);
-    setAdjustmentQuantity('');
-    setAdjustmentReason('');
-    setIsEditing(false);
-  };
-
-  const lowStockItems = stockItems.filter(item => item.current_stock <= item.min_stock);
+  // Se o usuário não tem loja, mostrar tela de criação
+  if (!user?.store_id) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Store className="h-12 w-12 text-blue-600" />
+              </div>
+              <CardTitle className="text-2xl">Bem-vindo ao MKsimplo!</CardTitle>
+              <CardDescription>
+                Você ainda não tem uma loja cadastrada. Crie sua primeira loja para começar a usar o sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button 
+                onClick={() => navigate('/settings')}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Criar Minha Primeira Loja
+              </Button>
+              <p className="text-sm text-gray-500 mt-3">
+                Você pode criar sua loja nas configurações do sistema
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -104,215 +53,63 @@ export default function Inventory() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Controle de Estoque</h1>
-            <p className="text-gray-500">Gerencie o inventário da sua loja</p>
+            <h1 className="text-3xl font-bold text-gray-900">Estoque</h1>
+            <p className="text-gray-500">Controle o estoque dos seus produtos</p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Produto
-          </Button>
         </div>
 
-        {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Resumo */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stockItems.length}</div>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">no estoque</p>
             </CardContent>
           </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Estoque Total</CardTitle>
-              <ArrowUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stockItems.reduce((total, item) => total + item.current_stock, 0)}
-              </div>
-            </CardContent>
-          </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <AlertTriangle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-500">{lowStockItems.length}</div>
+              <div className="text-2xl font-bold text-red-500">0</div>
+              <p className="text-xs text-muted-foreground">produtos</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-              <ArrowDown className="h-4 w-4 text-muted-foreground" />
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">R$ 0,00</div>
+              <p className="text-xs text-muted-foreground">em estoque</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Pesquisa e Filtros */}
+        {/* Estado Vazio */}
         <Card>
-          <CardHeader>
-            <CardTitle>Inventário</CardTitle>
-            <CardDescription>
-              Lista de todos os produtos em estoque
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Buscar por produto ou SKU..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {stockItems.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhum produto no estoque
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  Cadastre produtos para começar a controlar seu estoque
-                </p>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Cadastrar Primeiro Produto
-                </Button>
-              </div>
-            ) : (
-              /* Tabela de Estoque */
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Estoque Atual</TableHead>
-                    <TableHead>Mín/Máx</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Última Atualização</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredItems.map((item) => {
-                    const stockStatus = getStockStatus(item);
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.product_name}</TableCell>
-                        <TableCell>{item.sku}</TableCell>
-                        <TableCell>{item.current_stock}</TableCell>
-                        <TableCell>{item.min_stock}/{item.max_stock}</TableCell>
-                        <TableCell>{item.location}</TableCell>
-                        <TableCell>
-                          <Badge variant={stockStatus.variant}>
-                            {stockStatus.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{item.last_updated}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedItem(item);
-                              setIsEditing(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
+          <CardContent className="text-center py-12">
+            <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhum produto no estoque
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Cadastre produtos para começar a controlar seu estoque
+            </p>
+            <Button onClick={() => navigate('/products')}>
+              <Package className="w-4 h-4 mr-2" />
+              Ir para Produtos
+            </Button>
           </CardContent>
         </Card>
-
-        {/* Modal de Ajuste de Estoque */}
-        {isEditing && selectedItem && (
-          <Card className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Ajustar Estoque</h2>
-              <p className="text-gray-600 mb-4">
-                Produto: <strong>{selectedItem.product_name}</strong>
-              </p>
-              <p className="text-gray-600 mb-4">
-                Estoque Atual: <strong>{selectedItem.current_stock} unidades</strong>
-              </p>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="quantity">Quantidade</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={adjustmentQuantity}
-                    onChange={(e) => setAdjustmentQuantity(e.target.value)}
-                    placeholder="Digite a quantidade"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="reason">Motivo (opcional)</Label>
-                  <Input
-                    id="reason"
-                    value={adjustmentReason}
-                    onChange={(e) => setAdjustmentReason(e.target.value)}
-                    placeholder="Ex: Entrada de mercadoria, perda, etc."
-                  />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={() => handleStockAdjustment('increase')}
-                    className="flex-1"
-                  >
-                    <ArrowUp className="mr-2 h-4 w-4" />
-                    Adicionar
-                  </Button>
-                  <Button
-                    onClick={() => handleStockAdjustment('decrease')}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <ArrowDown className="mr-2 h-4 w-4" />
-                    Remover
-                  </Button>
-                </div>
-                
-                <Button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setSelectedItem(null);
-                    setAdjustmentQuantity('');
-                    setAdjustmentReason('');
-                  }}
-                  variant="ghost"
-                  className="w-full"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );
