@@ -118,46 +118,24 @@ const Admin = () => {
     try {
       console.log('🔍 Carregando todas as lojas da tabela stores...');
       
-      // Buscar TODAS as lojas diretamente da tabela stores usando RPC para contornar RLS
-      const { data: storesData, error } = await supabase.rpc('get_all_stores_admin');
+      // Buscar TODAS as lojas diretamente da tabela stores
+      const { data: storesData, error } = await supabase
+        .from('stores')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.log('⚠️ Erro na função RPC, tentando consulta direta...');
-        
-        // Se a função RPC falhar, tentar consulta direta
-        const { data: directData, error: directError } = await supabase
-          .from('stores')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (directError) {
-          console.error('❌ Erro na consulta direta:', directError);
-          throw directError;
-        }
-
-        console.log('📊 Resultado da consulta direta stores:', {
-          encontradas: directData?.length || 0,
-          dados: directData
-        });
-
-        if (directData && directData.length > 0) {
-          console.log('✅ Lojas encontradas via consulta direta:', directData.length);
-          setStores(directData);
-        } else {
-          console.log('📭 Nenhuma loja encontrada na tabela stores');
-          setStores([]);
-        }
-
-        return directData?.length || 0;
+        console.error('❌ Erro na consulta:', error);
+        throw error;
       }
 
-      console.log('📊 Resultado da função RPC stores:', {
+      console.log('📊 Resultado da consulta stores:', {
         encontradas: storesData?.length || 0,
         dados: storesData
       });
 
       if (storesData && storesData.length > 0) {
-        console.log('✅ Lojas encontradas via RPC:', storesData.length);
+        console.log('✅ Lojas encontradas:', storesData.length);
         setStores(storesData);
       } else {
         console.log('📭 Nenhuma loja encontrada na tabela stores');
@@ -216,13 +194,13 @@ const Admin = () => {
         });
         await loadStores(); // Recarregar dados
       } else {
-        throw new Error(result.error?.message || 'Erro desconhecido');
+        throw new Error(result.error || 'Erro desconhecido');
       }
     } catch (error: any) {
       console.error('❌ Erro ao criar lojas de teste:', error);
       toast({
         title: "Erro ao criar lojas de teste",
-        description: error.message,
+        description: error.message || "Erro desconhecido",
         variant: "destructive"
       });
     } finally {
