@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -33,55 +32,13 @@ interface Sale {
 }
 
 const mockProducts = [
-  { id: '1', name: 'Camiseta Básica', price: 29.90, stock: 25 },
-  { id: '2', name: 'Calça Jeans', price: 89.90, stock: 15 },
-  { id: '3', name: 'Tênis Esportivo', price: 159.90, stock: 10 },
+  { id: '1', name: 'Produto Exemplo', price: 29.90, stock: 0 },
 ];
 
 const Sales = () => {
   const { toast } = useToast();
-  const [sales, setSales] = useState<Sale[]>([
-    {
-      id: '1',
-      date: '2024-06-04T10:30:00',
-      customerName: 'João Silva',
-      customerEmail: 'joao@email.com',
-      items: [
-        {
-          productId: '1',
-          productName: 'Camiseta Básica',
-          quantity: 2,
-          unitPrice: 29.90,
-          total: 59.80,
-        },
-      ],
-      subtotal: 59.80,
-      discount: 0,
-      total: 59.80,
-      paymentMethod: 'credit_card',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      date: '2024-06-04T14:15:00',
-      customerName: 'Maria Santos',
-      items: [
-        {
-          productId: '2',
-          productName: 'Calça Jeans',
-          quantity: 1,
-          unitPrice: 89.90,
-          total: 89.90,
-        },
-      ],
-      subtotal: 89.90,
-      discount: 5.00,
-      total: 84.90,
-      paymentMethod: 'pix',
-      status: 'completed',
-    },
-  ]);
-
+  // Estado vazio - sistema limpo
+  const [sales, setSales] = useState<Sale[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewSaleOpen, setIsNewSaleOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -260,114 +217,15 @@ const Sales = () => {
                 <DialogTitle>Nova Venda</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="customerName">Nome do Cliente *</Label>
-                    <Input
-                      id="customerName"
-                      value={newSale.customerName}
-                      onChange={(e) => setNewSale({ ...newSale, customerName: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="customerEmail">Email (opcional)</Label>
-                    <Input
-                      id="customerEmail"
-                      type="email"
-                      value={newSale.customerEmail}
-                      onChange={(e) => setNewSale({ ...newSale, customerEmail: e.target.value })}
-                    />
-                  </div>
+                <div className="text-center py-8 text-gray-500">
+                  <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Cadastre produtos primeiro
+                  </h3>
+                  <p className="text-gray-500">
+                    Você precisa ter produtos cadastrados para realizar vendas
+                  </p>
                 </div>
-
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold mb-3">Adicionar Produto</h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Select value={currentItem.productId} onValueChange={(value) => setCurrentItem({ ...currentItem, productId: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar produto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {mockProducts.map(product => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} - R$ {product.price.toFixed(2)} (Est: {product.stock})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min="1"
-                      placeholder="Qtd"
-                      value={currentItem.quantity}
-                      onChange={(e) => setCurrentItem({ ...currentItem, quantity: parseInt(e.target.value) || 1 })}
-                    />
-                    <Button onClick={addItemToSale}>Adicionar</Button>
-                  </div>
-                </div>
-
-                {newSale.items.length > 0 && (
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-3">Itens da Venda</h3>
-                    <div className="space-y-2">
-                      {newSale.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <div>
-                            <span className="font-medium">{item.productName}</span>
-                            <span className="text-gray-600"> x{item.quantity}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span>R$ {item.total.toFixed(2)}</span>
-                            <Button variant="outline" size="sm" onClick={() => removeItemFromSale(index)}>
-                              Remover
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="discount">Desconto (R$)</Label>
-                    <Input
-                      id="discount"
-                      type="number"
-                      step="0.01"
-                      value={newSale.discount}
-                      onChange={(e) => setNewSale({ ...newSale, discount: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="paymentMethod">Forma de Pagamento *</Label>
-                    <Select value={newSale.paymentMethod} onValueChange={(value) => setNewSale({ ...newSale, paymentMethod: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                        <SelectItem value="debit_card">Cartão de Débito</SelectItem>
-                        <SelectItem value="pix">PIX</SelectItem>
-                        <SelectItem value="cash">Dinheiro</SelectItem>
-                        <SelectItem value="bank_transfer">Transferência</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {newSale.items.length > 0 && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>Total:</span>
-                      <span>R$ {calculateSaleTotal().toFixed(2)}</span>
-                    </div>
-                  </div>
-                )}
-
-                <Button onClick={completeSale} className="w-full" disabled={newSale.items.length === 0}>
-                  Finalizar Venda
-                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -424,53 +282,69 @@ const Sales = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {filteredSales.map(sale => (
-                <div key={sale.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="font-semibold">Venda #{sale.id}</h3>
-                        {getStatusBadge(sale.status)}
+            {sales.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhuma venda registrada
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Suas vendas aparecerão aqui quando você começar a vender
+                </p>
+                <Button onClick={() => setIsNewSaleOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Registrar Primeira Venda
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredSales.map(sale => (
+                  <div key={sale.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="font-semibold">Venda #{sale.id}</h3>
+                          {getStatusBadge(sale.status)}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Cliente:</span>
+                            <p className="font-medium">{sale.customerName}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Data:</span>
+                            <p className="font-medium">
+                              {new Date(sale.date).toLocaleDateString('pt-BR')} às{' '}
+                              {new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Pagamento:</span>
+                            <p className="font-medium">{getPaymentMethodLabel(sale.paymentMethod)}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Total:</span>
+                            <p className="font-medium text-blue-600">R$ {sale.total.toFixed(2)}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">Cliente:</span>
-                          <p className="font-medium">{sale.customerName}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Data:</span>
-                          <p className="font-medium">
-                            {new Date(sale.date).toLocaleDateString('pt-BR')} às{' '}
-                            {new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Pagamento:</span>
-                          <p className="font-medium">{getPaymentMethodLabel(sale.paymentMethod)}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Total:</span>
-                          <p className="font-medium text-blue-600">R$ {sale.total.toFixed(2)}</p>
-                        </div>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedSale(sale)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedSale(sale)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
                   </div>
-                </div>
-              ))}
-              {filteredSales.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  {searchTerm ? 'Nenhuma venda encontrada' : 'Nenhuma venda registrada'}
-                </div>
-              )}
-            </div>
+                ))}
+                {filteredSales.length === 0 && searchTerm && (
+                  <div className="text-center py-8 text-gray-500">
+                    Nenhuma venda encontrada para "{searchTerm}"
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -37,39 +37,8 @@ export default function Inventory() {
   const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
 
-  // Mock data - em uma aplicação real, isso viria do Supabase
-  const [stockItems, setStockItems] = useState<StockItem[]>([
-    {
-      id: '1',
-      product_name: 'Smartphone Galaxy',
-      sku: 'PHONE-001',
-      current_stock: 5,
-      min_stock: 10,
-      max_stock: 100,
-      location: 'A1-001',
-      last_updated: '2024-01-15'
-    },
-    {
-      id: '2',
-      product_name: 'Notebook Dell',
-      sku: 'LAPTOP-002',
-      current_stock: 25,
-      min_stock: 5,
-      max_stock: 50,
-      location: 'B2-003',
-      last_updated: '2024-01-14'
-    },
-    {
-      id: '3',
-      product_name: 'Mouse Wireless',
-      sku: 'MOUSE-003',
-      current_stock: 2,
-      min_stock: 15,
-      max_stock: 200,
-      location: 'C1-015',
-      last_updated: '2024-01-13'
-    }
-  ]);
+  // Estado vazio - sistema limpo
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
 
   const filteredItems = stockItems.filter(item =>
     item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,33 +113,6 @@ export default function Inventory() {
           </Button>
         </div>
 
-        {/* Alertas de Estoque Baixo */}
-        {lowStockItems.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50">
-            <CardHeader>
-              <CardTitle className="flex items-center text-orange-800">
-                <AlertTriangle className="mr-2 h-5 w-5" />
-                Alertas de Estoque Baixo
-              </CardTitle>
-              <CardDescription>
-                {lowStockItems.length} produto(s) com estoque abaixo do mínimo
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {lowStockItems.map(item => (
-                  <div key={item.id} className="flex justify-between items-center p-2 bg-white rounded">
-                    <span className="font-medium">{item.product_name}</span>
-                    <span className="text-sm text-gray-600">
-                      Estoque: {item.current_stock} (Mín: {item.min_stock})
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
@@ -211,7 +153,7 @@ export default function Inventory() {
               <ArrowDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ 125.000</div>
+              <div className="text-2xl font-bold">R$ 0,00</div>
             </CardContent>
           </Card>
         </div>
@@ -237,53 +179,69 @@ export default function Inventory() {
               </div>
             </div>
 
-            {/* Tabela de Estoque */}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Estoque Atual</TableHead>
-                  <TableHead>Mín/Máx</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Última Atualização</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item) => {
-                  const stockStatus = getStockStatus(item);
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.product_name}</TableCell>
-                      <TableCell>{item.sku}</TableCell>
-                      <TableCell>{item.current_stock}</TableCell>
-                      <TableCell>{item.min_stock}/{item.max_stock}</TableCell>
-                      <TableCell>{item.location}</TableCell>
-                      <TableCell>
-                        <Badge variant={stockStatus.variant}>
-                          {stockStatus.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{item.last_updated}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setIsEditing(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            {stockItems.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhum produto no estoque
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Cadastre produtos para começar a controlar seu estoque
+                </p>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Cadastrar Primeiro Produto
+                </Button>
+              </div>
+            ) : (
+              /* Tabela de Estoque */
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Estoque Atual</TableHead>
+                    <TableHead>Mín/Máx</TableHead>
+                    <TableHead>Localização</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Última Atualização</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.map((item) => {
+                    const stockStatus = getStockStatus(item);
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.product_name}</TableCell>
+                        <TableCell>{item.sku}</TableCell>
+                        <TableCell>{item.current_stock}</TableCell>
+                        <TableCell>{item.min_stock}/{item.max_stock}</TableCell>
+                        <TableCell>{item.location}</TableCell>
+                        <TableCell>
+                          <Badge variant={stockStatus.variant}>
+                            {stockStatus.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{item.last_updated}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setIsEditing(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 

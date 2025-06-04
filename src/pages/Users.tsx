@@ -29,36 +29,8 @@ interface User {
 }
 
 const Users = () => {
-  const [users] = useState<User[]>([
-    {
-      id: '1',
-      name: 'João Silva',
-      email: 'joao@loja.com',
-      role: 'owner',
-      status: 'active',
-      lastLogin: '2024-06-04T10:30:00',
-      createdAt: '2024-01-15T08:00:00',
-    },
-    {
-      id: '2',
-      name: 'Maria Santos',
-      email: 'maria@loja.com',
-      role: 'manager',
-      status: 'active',
-      lastLogin: '2024-06-04T09:15:00',
-      createdAt: '2024-02-01T14:30:00',
-    },
-    {
-      id: '3',
-      name: 'Pedro Oliveira',
-      email: 'pedro@loja.com',
-      role: 'seller',
-      status: 'active',
-      lastLogin: '2024-06-03T16:45:00',
-      createdAt: '2024-03-10T11:20:00',
-    },
-  ]);
-
+  // Estado vazio - sistema limpo
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -219,69 +191,83 @@ const Users = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {filteredUsers.map(user => (
-                <div key={user.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        {user.role === 'owner' ? (
-                          <Shield className="w-6 h-6 text-blue-600" />
-                        ) : (
-                          <ShoppingCart className="w-6 h-6 text-blue-600" />
-                        )}
+            {users.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <UsersIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">Nenhum usuário cadastrado</h3>
+                <p className="text-gray-500 mb-6">
+                  Adicione usuários para colaborar na gestão da sua loja
+                </p>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Primeiro Usuário
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredUsers.map(user => (
+                  <div key={user.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          {user.role === 'owner' ? (
+                            <Shield className="w-6 h-6 text-blue-600" />
+                          ) : (
+                            <ShoppingCart className="w-6 h-6 text-blue-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{user.name}</h3>
+                          <p className="text-gray-600 text-sm">{user.email}</p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge className={getRoleBadgeColor(user.role)}>
+                              {getRoleLabel(user.role)}
+                            </Badge>
+                            <Badge className={getStatusBadgeColor(user.status)}>
+                              {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold">{user.name}</h3>
-                        <p className="text-gray-600 text-sm">{user.email}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge className={getRoleBadgeColor(user.role)}>
-                            {getRoleLabel(user.role)}
-                          </Badge>
-                          <Badge className={getStatusBadgeColor(user.status)}>
-                            {user.status === 'active' ? 'Ativo' : 'Inativo'}
-                          </Badge>
+                      
+                      <div className="text-right">
+                        <div className="text-sm text-gray-600">
+                          Último acesso: {formatDate(user.lastLogin)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Criado em: {formatDate(user.createdAt)}
+                        </div>
+                        <div className="flex space-x-2 mt-2">
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          {user.status === 'active' ? (
+                            <Button size="sm" variant="outline">
+                              <UserX className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline">
+                              <UserCheck className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600">
-                        Último acesso: {formatDate(user.lastLogin)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Criado em: {formatDate(user.createdAt)}
-                      </div>
-                      <div className="flex space-x-2 mt-2">
-                        <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {user.status === 'active' ? (
-                          <Button size="sm" variant="outline">
-                            <UserX className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline">
-                            <UserCheck className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {filteredUsers.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <UsersIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium mb-2">Nenhum usuário encontrado</h3>
-                  <p>Tente ajustar os filtros ou adicionar novos usuários</p>
-                </div>
-              )}
-            </div>
+                {filteredUsers.length === 0 && searchTerm && (
+                  <div className="text-center py-12 text-gray-500">
+                    <UsersIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium mb-2">Nenhum usuário encontrado</h3>
+                    <p>Tente ajustar os filtros de busca</p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

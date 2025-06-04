@@ -16,25 +16,16 @@ const Dashboard = () => {
     setUser(userData);
   }, []);
 
-  // Dados simulados (viria do Supabase)
+  // Dados vazios - sistema limpo
   const stats = {
-    totalProducts: 45,
-    lowStockProducts: 3,
-    todaySales: 8,
-    todayProfit: 245.50
+    totalProducts: 0,
+    lowStockProducts: 0,
+    todaySales: 0,
+    todayProfit: 0.00
   };
 
-  const lowStockItems = [
-    { name: 'Camiseta Básica Preta', stock: 2, minStock: 5 },
-    { name: 'Calça Jeans Skinny', stock: 1, minStock: 3 },
-    { name: 'Vestido Floral', stock: 0, minStock: 2 }
-  ];
-
-  const recentSales = [
-    { product: 'Blusa Listrada', quantity: 2, value: 89.90, time: '14:30' },
-    { product: 'Saia Midi', quantity: 1, value: 65.00, time: '13:15' },
-    { product: 'Conjunto Moletom', quantity: 1, value: 120.00, time: '11:45' }
-  ];
+  const lowStockItems: any[] = [];
+  const recentSales: any[] = [];
 
   // Se o usuário não tem loja, mostrar tela de criação
   if (!user?.store_id) {
@@ -128,19 +119,19 @@ const Dashboard = () => {
                 R$ {stats.todayProfit.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground">
-                +12% que ontem
+                sem vendas hoje
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Alerts and Recent Sales */}
+        {/* Empty States */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Low Stock Alert */}
+          {/* Low Stock Alert - Empty */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                <AlertTriangle className="h-5 w-5 text-gray-400 mr-2" />
                 Produtos com Estoque Baixo
               </CardTitle>
               <CardDescription>
@@ -148,25 +139,17 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {lowStockItems.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-600">
-                        Estoque atual: {item.stock} (mín: {item.minStock})
-                      </p>
-                    </div>
-                    <Badge variant={item.stock === 0 ? "destructive" : "outline"}>
-                      {item.stock === 0 ? "Esgotado" : "Baixo"}
-                    </Badge>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-gray-500">
+                <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm">Nenhum produto com estoque baixo</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Cadastre produtos para monitorar o estoque
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Recent Sales */}
+          {/* Recent Sales - Empty */}
           <Card>
             <CardHeader>
               <CardTitle>Vendas Recentes</CardTitle>
@@ -175,22 +158,12 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentSales.map((sale, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{sale.product}</p>
-                      <p className="text-sm text-gray-600">
-                        {sale.quantity}x - {sale.time}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-green-600">
-                        R$ {sale.value.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-gray-500">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm">Nenhuma venda hoje</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  As vendas aparecerão aqui quando realizadas
+                </p>
               </div>
             </CardContent>
           </Card>
