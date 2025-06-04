@@ -26,9 +26,12 @@ const Register = () => {
     try {
       console.log('Iniciando registro com email:', email);
       
-      // Primeiro, criar o usuário no Supabase Auth
+      // Fazer logout antes de criar nova conta para evitar conflitos
+      await supabase.auth.signOut();
+      
+      // Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email,
+        email: email.trim(),
         password: password,
         options: {
           data: {
@@ -42,35 +45,48 @@ const Register = () => {
 
       if (authError) {
         console.error('Erro no registro:', authError);
-        throw authError;
+        
+        // Tratar erros específicos
+        if (authError.message === "User already registered") {
+          toast({
+            title: "Email já cadastrado",
+            description: "Este email já possui uma conta. Tente fazer login ou use outro email.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erro no cadastro",
+            description: authError.message || "Tente novamente",
+            variant: "destructive"
+          });
+        }
+        return;
       }
 
-      console.log('Usuário criado com sucesso:', authData);
+      console.log('Usuário criado:', authData);
 
-      if (authData.user) {
-        // Se o usuário foi criado e está confirmado, fazer login automático
-        if (authData.user.email_confirmed_at) {
-          console.log('Email já confirmado, fazendo login automático');
-          
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password,
-          });
-
-          if (signInError) {
-            console.error('Erro no login automático:', signInError);
-            throw signInError;
-          }
-
-          navigate('/dashboard');
-        } else {
-          // Email precisa ser confirmado
-          toast({
-            title: "Conta criada com sucesso!",
-            description: "Verifique seu email para confirmar a conta antes de fazer login.",
-          });
-          navigate('/login');
-        }
+      if (authData.user && !authData.user.email_confirmed_at) {
+        // Email precisa ser confirmado
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Verifique seu email para confirmar a conta antes de fazer login.",
+        });
+        navigate('/login');
+      } else if (authData.user && authData.user.email_confirmed_at) {
+        // Email já confirmado (modo desenvolvimento), redirecionar para dashboard
+        console.log('Email já confirmado, redirecionando para dashboard');
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Bem-vindo ao MKsimplo!"
+        });
+        navigate('/dashboard');
+      } else {
+        // Caso padrão - redirecionar para login
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Faça login para acessar sua conta.",
+        });
+        navigate('/login');
       }
     } catch (error: any) {
       console.error('Erro no cadastro:', error);

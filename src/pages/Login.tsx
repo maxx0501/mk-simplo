@@ -19,10 +19,14 @@ const Login = () => {
   // Verificar se já está logado
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log('Usuário já logado, redirecionando...');
-        navigate('/dashboard');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('Usuário já logado, redirecionando...');
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar sessão:', error);
       }
     };
     checkAuth();
@@ -53,6 +57,9 @@ const Login = () => {
         navigate('/admin');
         return;
       }
+
+      // Fazer logout antes do login para limpar qualquer sessão existente
+      await supabase.auth.signOut();
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -100,10 +107,8 @@ const Login = () => {
               store_id: userStoreData.store_id,
               store_name: userStoreData.stores.name
             }));
-            navigate('/dashboard');
           } else {
-            console.log('Usuário não possui loja, redirecionando para dashboard mesmo assim');
-            // Mesmo sem loja, permitir acesso ao dashboard
+            console.log('Usuário não possui loja, configurando dados básicos');
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,
@@ -111,8 +116,8 @@ const Login = () => {
               store_id: null,
               store_name: null
             }));
-            navigate('/dashboard');
           }
+          navigate('/dashboard');
         }
 
         toast({
@@ -129,6 +134,8 @@ const Login = () => {
         errorMessage = "Email ou senha incorretos. Verifique se sua conta foi confirmada.";
       } else if (error.message === "Email not confirmed") {
         errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
+      } else if (error.message.includes("Email")) {
+        errorMessage = "Problema com o email. Verifique se está correto.";
       }
       
       toast({
