@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Store, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Register = () => {
   const [storeName, setStoreName] = useState('');
@@ -22,28 +23,60 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulação de cadastro (aqui integraria com Supabase)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Iniciando registro com email:', email);
       
-      localStorage.setItem('mksimplo_user', JSON.stringify({
-        id: '1',
+      // Primeiro, criar o usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email,
-        role: 'owner',
-        store_id: '1',
-        store_name: storeName
-      }));
-      
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Bem-vindo ao MKsimplo"
+        password: password,
+        options: {
+          data: {
+            full_name: ownerName,
+            store_name: storeName,
+            phone: phone
+          },
+          emailRedirectTo: `${window.location.origin}/dashboard`
+        }
       });
-      
-      navigate('/dashboard');
-    } catch (error) {
+
+      if (authError) {
+        console.error('Erro no registro:', authError);
+        throw authError;
+      }
+
+      console.log('Usuário criado com sucesso:', authData);
+
+      if (authData.user) {
+        // Se o usuário foi criado e está confirmado, fazer login automático
+        if (authData.user.email_confirmed_at) {
+          console.log('Email já confirmado, fazendo login automático');
+          
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password,
+          });
+
+          if (signInError) {
+            console.error('Erro no login automático:', signInError);
+            throw signInError;
+          }
+
+          navigate('/dashboard');
+        } else {
+          // Email precisa ser confirmado
+          toast({
+            title: "Conta criada com sucesso!",
+            description: "Verifique seu email para confirmar a conta antes de fazer login.",
+          });
+          navigate('/login');
+        }
+      }
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
       toast({
         title: "Erro no cadastro",
-        description: "Tente novamente",
+        description: error.message || "Tente novamente",
         variant: "destructive"
       });
     } finally {
@@ -124,6 +157,7 @@ const Register = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
               </div>
 

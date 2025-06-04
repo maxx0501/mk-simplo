@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,14 +16,28 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Verificar se já está logado
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log('Usuário já logado, redirecionando...');
+        navigate('/dashboard');
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      console.log('Tentando fazer login com email:', email);
+
       // Caso especial para admin de demonstração
       if (email === 'admin@mksimplo.com') {
-        // Simular login de admin sem autenticação real
+        console.log('Login de admin demo');
         localStorage.setItem('mksimplo_user', JSON.stringify({
           id: 'demo-admin-id',
           email: 'admin@mksimplo.com',
@@ -41,11 +55,16 @@ const Login = () => {
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro no login:', error);
+        throw error;
+      }
+
+      console.log('Login bem-sucedido:', data);
 
       if (data.user) {
         // Verificar se é admin da plataforma
@@ -53,10 +72,10 @@ const Login = () => {
           .from('platform_admins')
           .select('*')
           .eq('user_id', data.user.id)
-          .single();
+          .maybeSingle();
 
         if (adminData) {
-          // É admin da plataforma
+          console.log('Usuário é admin da plataforma');
           localStorage.setItem('mksimplo_user', JSON.stringify({
             id: data.user.id,
             email: data.user.email,
@@ -70,9 +89,10 @@ const Login = () => {
             .from('user_stores')
             .select('*, stores(*)')
             .eq('user_id', data.user.id)
-            .single();
+            .maybeSingle();
 
           if (userStoreData && userStoreData.stores) {
+            console.log('Usuário pertence a uma loja');
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,
@@ -82,7 +102,16 @@ const Login = () => {
             }));
             navigate('/dashboard');
           } else {
-            throw new Error('Usuário não possui acesso a nenhuma loja');
+            console.log('Usuário não possui loja, redirecionando para dashboard mesmo assim');
+            // Mesmo sem loja, permitir acesso ao dashboard
+            localStorage.setItem('mksimplo_user', JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              role: 'owner',
+              store_id: null,
+              store_name: null
+            }));
+            navigate('/dashboard');
           }
         }
 
@@ -93,9 +122,18 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Erro no login:', error);
+      
+      let errorMessage = "Email ou senha incorretos";
+      
+      if (error.message === "Invalid login credentials") {
+        errorMessage = "Email ou senha incorretos. Verifique se sua conta foi confirmada.";
+      } else if (error.message === "Email not confirmed") {
+        errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
+      }
+      
       toast({
         title: "Erro no login",
-        description: error.message || "Email ou senha incorretos",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -139,6 +177,7 @@ const Login = () => {
                 <Input
                   id="password"
                   type="password"
+                  placeholder="Sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
