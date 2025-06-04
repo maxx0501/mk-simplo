@@ -82,13 +82,13 @@ export const useAuth = () => {
               store_name: userStoreData.stores.name
             }));
           } else {
-            console.log('Usuário não tem loja associada, criando loja...');
+            console.log('Usuário não tem loja associada, criando loja automaticamente...');
             
-            // Obter dados do usuário para criar a loja
-            const storeName = data.user.user_metadata?.store_name || 'Minha Loja';
-            const ownerName = data.user.user_metadata?.full_name || 'Proprietário';
+            // Criar a loja com dados padrão baseados no email
+            const emailPrefix = data.user.email?.split('@')[0] || 'usuario';
+            const storeName = `Loja ${emailPrefix}`;
+            const ownerName = data.user.user_metadata?.full_name || emailPrefix;
             
-            // Criar a loja
             const { data: storeData, error: storeError } = await supabase
               .from('stores')
               .insert({
@@ -97,7 +97,7 @@ export const useAuth = () => {
                 owner_name: ownerName,
                 plan_type: 'free',
                 status: 'active',
-                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
+                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
               })
               .select()
               .single();
@@ -135,7 +135,6 @@ export const useAuth = () => {
 
             console.log('Usuário associado à loja com sucesso');
 
-            // Salvar dados do usuário
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,
@@ -245,10 +244,18 @@ export const useAuth = () => {
         return false;
       }
 
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Verifique seu email para confirmar a conta antes de fazer login.",
-      });
+      // Se o usuário foi criado e já está confirmado (desenvolvimento local)
+      if (authData.user && !authData.user.email_confirmed_at) {
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Verifique seu email para confirmar a conta antes de fazer login.",
+        });
+      } else {
+        toast({
+          title: "Conta criada e confirmada!",
+          description: "Você já pode fazer login com suas credenciais.",
+        });
+      }
       
       return true;
 

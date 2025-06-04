@@ -29,7 +29,7 @@ export const RegisterForm = () => {
       // Aguardar um pouco e redirecionar para login
       setTimeout(() => {
         navigate('/login');
-      }, 2000);
+      }, 3000);
     }
   };
 
@@ -96,7 +96,7 @@ export const RegisterForm = () => {
       
       <div className="text-sm text-gray-600 text-center">
         <p>Ao criar sua conta, você receberá um email de confirmação.</p>
-        <p>Confirme seu email antes de fazer login.</p>
+        <p className="mt-1">Se não receber o email, você ainda pode fazer login após alguns minutos.</p>
       </div>
     </form>
   );
