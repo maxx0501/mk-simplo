@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Crown, Clock, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import SubscriptionPlans from '@/components/SubscriptionPlans';
 
 interface SubscriptionInfo {
@@ -20,20 +20,60 @@ interface SubscriptionInfo {
 const Subscription = () => {
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const checkAuth = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Auth check result:', user);
+      
+      if (!user) {
+        toast({
+          title: "Acesso negado",
+          description: "Você precisa estar logado para acessar esta página",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return false;
+      }
+      
+      setIsAuthenticated(true);
+      return true;
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+      navigate('/login');
+      return false;
+    }
+  };
 
   const checkSubscription = async () => {
     try {
+      setLoading(true);
+      
+      // Verificar se o usuário está autenticado
+      const authValid = await checkAuth();
+      if (!authValid) return;
+
+      console.log('Iniciando verificação de assinatura...');
+      
       const { data, error } = await supabase.functions.invoke('check-subscription');
       
-      if (error) throw error;
+      console.log('Resposta da função check-subscription:', { data, error });
+      
+      if (error) {
+        console.error('Erro na função:', error);
+        throw error;
+      }
       
       setSubscriptionInfo(data);
+      console.log('Informações de assinatura atualizadas:', data);
     } catch (error: any) {
       console.error('Erro ao verificar assinatura:', error);
       toast({
         title: "Erro",
-        description: "Erro ao verificar status da assinatura",
+        description: error.message || "Erro ao verificar status da assinatura",
         variant: "destructive"
       });
     } finally {
@@ -43,6 +83,10 @@ const Subscription = () => {
 
   const handleManageSubscription = async () => {
     try {
+      // Verificar se o usuário está autenticado
+      const authValid = await checkAuth();
+      if (!authValid) return;
+
       const { data, error } = await supabase.functions.invoke('customer-portal');
       
       if (error) throw error;
@@ -77,6 +121,16 @@ const Subscription = () => {
     const remainingDays = getRemainingTrialDays();
     return ((7 - remainingDays) / 7) * 100;
   };
+
+  if (!isAuthenticated) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Verificando autenticação...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (loading) {
     return (

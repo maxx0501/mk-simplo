@@ -34,19 +34,34 @@ const Index = () => {
       
       if (!user) {
         // Redirecionar para login se não estiver logado
+        toast({
+          title: "Login necessário",
+          description: "Você precisa fazer login para assinar um plano",
+          variant: "destructive"
+        });
         window.location.href = '/login';
         return;
       }
 
-      // Criar checkout para plano Pro
+      console.log('Usuário autenticado, criando checkout para plano básico');
+
+      // Criar checkout para plano básico
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { plan_type: 'basic' }
       });
 
-      if (error) throw error;
+      console.log('Resposta do checkout:', { data, error });
+
+      if (error) {
+        console.error('Erro na função create-checkout:', error);
+        throw error;
+      }
 
       if (data?.url) {
+        console.log('Abrindo URL do checkout:', data.url);
         window.open(data.url, '_blank');
+      } else {
+        throw new Error('URL de checkout não recebida');
       }
     } catch (error: any) {
       console.error('Erro ao criar checkout:', error);

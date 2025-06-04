@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Crown, Star, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface SubscriptionPlansProps {
   currentPlan?: string;
@@ -15,6 +16,7 @@ interface SubscriptionPlansProps {
 const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps) => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const plans = [
     {
@@ -75,6 +77,28 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
     }
   ];
 
+  const checkAuth = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Acesso negado",
+          description: "Você precisa estar logado para assinar um plano",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+      navigate('/login');
+      return false;
+    }
+  };
+
   const handleSubscribe = async (planType: string) => {
     if (planType === 'trial') {
       toast({
@@ -86,14 +110,28 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
 
     setLoading(planType);
     try {
+      // Verificar autenticação antes de prosseguir
+      const authValid = await checkAuth();
+      if (!authValid) return;
+
+      console.log('Iniciando checkout para plano:', planType);
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { plan_type: planType }
       });
 
-      if (error) throw error;
+      console.log('Resposta do checkout:', { data, error });
+
+      if (error) {
+        console.error('Erro na função create-checkout:', error);
+        throw error;
+      }
 
       if (data?.url) {
+        console.log('Redirecionando para checkout:', data.url);
         window.open(data.url, '_blank');
+      } else {
+        throw new Error('URL de checkout não recebida');
       }
     } catch (error: any) {
       console.error('Erro ao criar checkout:', error);
