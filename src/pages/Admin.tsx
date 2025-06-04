@@ -70,14 +70,17 @@ const Admin = () => {
           return;
         }
 
-        // Para usuários reais, verificar na tabela profiles usando SQL direto
+        // Para usuários reais, verificar na tabela profiles
         try {
-          const { data: profileData, error: profileError } = await supabase.rpc('check_superadmin_status', {
-            user_id: user.id
-          });
+          console.log('Verificando superadmin via tabela profiles...');
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_superadmin')
+            .eq('id', user.id)
+            .maybeSingle();
 
           if (profileError) {
-            console.log('⚠️ Função check_superadmin_status não encontrada, usando fallback');
+            console.error('Erro ao verificar perfil:', profileError);
             
             // Fallback: verificar na tabela platform_admins (compatibilidade)
             const { data: adminData } = await supabase
@@ -96,7 +99,7 @@ const Admin = () => {
               navigate('/dashboard');
               return;
             }
-          } else if (!profileData) {
+          } else if (!profile?.is_superadmin) {
             console.log('❌ Acesso negado: usuário não é superadmin');
             toast({
               title: "Acesso negado",

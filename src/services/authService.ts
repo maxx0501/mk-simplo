@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const loginUser = async (email: string, password: string) => {
@@ -35,14 +36,18 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error('Usuário não encontrado');
   }
 
-  // Verificar se é admin da plataforma usando fallback
+  // Verificar se é admin da plataforma usando a tabela profiles
   try {
-    // Tentar verificar se é superadmin usando RPC function
-    const { data: superadminCheck } = await supabase.rpc('check_superadmin_status', {
-      user_id: data.user.id
-    });
+    console.log('Verificando se é superadmin via tabela profiles...');
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_superadmin')
+      .eq('id', data.user.id)
+      .maybeSingle();
 
-    if (superadminCheck) {
+    if (profileError) {
+      console.error('Erro ao verificar perfil:', profileError);
+    } else if (profile?.is_superadmin) {
       console.log('Usuário é superadmin da plataforma');
       return {
         success: true,
@@ -55,8 +60,8 @@ export const loginUser = async (email: string, password: string) => {
         redirectTo: '/admin'
       };
     }
-  } catch (rpcError) {
-    console.log('⚠️ Função check_superadmin_status não encontrada, usando fallback');
+  } catch (profileCheckError) {
+    console.log('⚠️ Erro ao verificar perfil, tentando fallback para platform_admins');
     
     // Fallback: verificar na tabela platform_admins
     const { data: adminData } = await supabase

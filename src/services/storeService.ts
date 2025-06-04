@@ -38,18 +38,22 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     throw new Error('Você já possui uma loja cadastrada.');
   }
 
-  // Verificar/criar perfil do usuário usando SQL direto para evitar problemas de tipos
+  // Verificar/criar perfil do usuário usando insert direto
   console.log('Verificando perfil do usuário...');
   try {
-    // Tentar criar perfil se não existir, usando upsert
-    const { error: profileUpsertError } = await supabase.rpc('upsert_user_profile', {
-      user_id: user.id,
-      user_email: user.email || '',
-      user_full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário'
-    });
+    // Tentar criar perfil se não existir
+    const { error: profileInsertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        email: user.email || '',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário'
+      });
 
-    if (profileUpsertError) {
-      console.log('⚠️ Função upsert_user_profile não encontrada, continuando sem criar perfil');
+    if (profileInsertError && !profileInsertError.message.includes('duplicate key')) {
+      console.error('Erro ao criar perfil:', profileInsertError);
+    } else {
+      console.log('Perfil criado ou já existe');
     }
   } catch (profileError) {
     console.log('⚠️ Erro ao criar/verificar perfil, continuando:', profileError);
