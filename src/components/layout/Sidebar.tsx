@@ -44,10 +44,10 @@ export const Sidebar = () => {
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
 
   return (
-    <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow pt-5 overflow-y-auto bg-sidebar border-r border-sidebar-border">
+    <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
+      <div className="flex flex-col flex-grow">
         {/* Logo */}
-        <div className="flex items-center flex-shrink-0 px-4">
+        <div className="flex items-center flex-shrink-0 px-4 pt-5">
           <Store className="h-8 w-8 text-blue-400" />
           <span className="ml-2 text-xl font-bold text-sidebar-foreground">MKsimplo</span>
         </div>
@@ -87,7 +87,7 @@ export const Sidebar = () => {
         </nav>
 
         {/* User info and logout */}
-        <div className="flex-shrink-0 flex border-t border-sidebar-border p-4">
+        <div className="flex-shrink-0 flex border-t border-sidebar-border p-4 mt-auto">
           <div className="flex-shrink-0 w-full group block">
             <div className="flex items-center justify-between">
               <div>
