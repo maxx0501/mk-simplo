@@ -4,8 +4,60 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Store, BarChart3, Users, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
+  const { toast } = useToast();
+
+  const handleStartFree = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // Redirecionar para registro se não estiver logado
+        window.location.href = '/register';
+        return;
+      }
+
+      // Se já estiver logado, redirecionar para dashboard
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error('Erro ao verificar usuário:', error);
+      window.location.href = '/register';
+    }
+  };
+
+  const handleSubscribePro = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // Redirecionar para login se não estiver logado
+        window.location.href = '/login';
+        return;
+      }
+
+      // Criar checkout para plano Pro
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan_type: 'basic' }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Erro ao criar checkout:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao processar pagamento. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       {/* Header */}
@@ -20,11 +72,12 @@ const Index = () => {
               <Link to="/login">
                 <Button variant="outline">Entrar</Button>
               </Link>
-              <Link to="/register">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Começar grátis
-                </Button>
-              </Link>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleStartFree}
+              >
+                Começar grátis
+              </Button>
             </div>
           </div>
         </div>
@@ -40,12 +93,14 @@ const Index = () => {
             Sistema completo para gestão de estoque, vendas, lucro e catálogo online. 
             Feito especialmente para lojas de pequeno porte.
           </p>
-          <Link to="/register">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4">
-              Começar grátis agora
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          <Button 
+            size="lg" 
+            className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4"
+            onClick={handleStartFree}
+          >
+            Começar grátis agora
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
         </div>
       </section>
 
@@ -116,17 +171,24 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Card className="border-2">
               <CardHeader>
-                <CardTitle className="text-2xl">Plano Gratuito</CardTitle>
-                <CardDescription>Para começar</CardDescription>
-                <div className="text-3xl font-bold">R$ 0</div>
+                <CardTitle className="text-2xl">Período de Teste</CardTitle>
+                <CardDescription>7 dias grátis para conhecer</CardDescription>
+                <div className="text-3xl font-bold">Grátis</div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-gray-600">
-                  <li>• Até 30 produtos</li>
+                <ul className="space-y-2 text-gray-600 mb-6">
+                  <li>• Até 50 produtos</li>
                   <li>• Controle de estoque básico</li>
                   <li>• Registro de vendas</li>
+                  <li>• Relatórios básicos</li>
                   <li>• 1 usuário</li>
                 </ul>
+                <Button 
+                  className="w-full"
+                  onClick={handleStartFree}
+                >
+                  Começar teste grátis
+                </Button>
               </CardContent>
             </Card>
 
@@ -138,17 +200,24 @@ const Index = () => {
               </div>
               <CardHeader>
                 <CardTitle className="text-2xl">Plano Pro</CardTitle>
-                <CardDescription>Para crescer</CardDescription>
+                <CardDescription>Para fazer sua loja crescer</CardDescription>
                 <div className="text-3xl font-bold">R$ 29,90<span className="text-lg">/mês</span></div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-gray-600">
+                <ul className="space-y-2 text-gray-600 mb-6">
                   <li>• Produtos ilimitados</li>
                   <li>• Catálogo online</li>
                   <li>• Relatórios avançados</li>
                   <li>• Usuários ilimitados</li>
                   <li>• Exportação de dados</li>
+                  <li>• Suporte prioritário</li>
                 </ul>
+                <Button 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  onClick={handleSubscribePro}
+                >
+                  Assinar Plano Pro
+                </Button>
               </CardContent>
             </Card>
           </div>
