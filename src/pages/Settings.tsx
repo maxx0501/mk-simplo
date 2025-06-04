@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Store, 
   User, 
@@ -30,8 +31,14 @@ import {
 
 const Settings = () => {
   const { toast } = useToast();
+  const { createStore } = useAuth();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [hasStore, setHasStore] = useState(false);
+
+  // Estados para criação de loja
+  const [newStoreName, setNewStoreName] = useState('');
+  const [newStoreType, setNewStoreType] = useState('');
 
   // Estados para as configurações
   const [storeSettings, setStoreSettings] = useState({
@@ -66,6 +73,7 @@ const Settings = () => {
     const loadUserData = () => {
       const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
       setUser(userData);
+      setHasStore(!!userData.store_id);
       
       // Carregar dados da loja se existir store_id
       if (userData.store_id) {
@@ -102,6 +110,40 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Erro ao carregar dados da loja:', error);
+    }
+  };
+
+  const handleCreateStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newStoreName.trim() || !newStoreType) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Nome da loja e tipo são obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const success = await createStore(newStoreName, '', '', newStoreType);
+    
+    if (success) {
+      setHasStore(true);
+      setNewStoreName('');
+      setNewStoreType('');
+      
+      // Recarregar dados do usuário
+      const updatedUser = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+      setUser(updatedUser);
+      
+      if (updatedUser.store_id) {
+        loadStoreData(updatedUser.store_id);
+      }
+      
+      toast({
+        title: "Loja criada com sucesso!",
+        description: "Agora você pode configurar os dados da sua loja."
+      });
     }
   };
 
@@ -221,90 +263,148 @@ const Settings = () => {
 
           {/* Configurações da Loja */}
           <TabsContent value="store">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Store className="h-5 w-5" />
-                  Informações da Loja
-                </CardTitle>
-                <CardDescription>
-                  Configure as informações básicas da sua loja
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="store-name">Nome da Loja *</Label>
-                    <Input
-                      id="store-name"
-                      value={storeSettings.name}
-                      onChange={(e) => setStoreSettings(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Digite o nome da sua loja"
-                      required
-                    />
+            {!hasStore ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Store className="h-5 w-5" />
+                    Criar Loja
+                  </CardTitle>
+                  <CardDescription>
+                    Você ainda não tem uma loja cadastrada. Crie sua primeira loja para começar.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleCreateStore} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-store-name">Nome da Loja *</Label>
+                        <Input
+                          id="new-store-name"
+                          value={newStoreName}
+                          onChange={(e) => setNewStoreName(e.target.value)}
+                          placeholder="Digite o nome da sua loja"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-store-type">Tipo da Loja *</Label>
+                        <Select value={newStoreType} onValueChange={setNewStoreType} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="roupas">Roupas e Acessórios</SelectItem>
+                            <SelectItem value="alimentacao">Alimentação</SelectItem>
+                            <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                            <SelectItem value="casa">Casa e Decoração</SelectItem>
+                            <SelectItem value="beleza">Beleza e Cosméticos</SelectItem>
+                            <SelectItem value="esportes">Esportes e Lazer</SelectItem>
+                            <SelectItem value="livros">Livros e Papelaria</SelectItem>
+                            <SelectItem value="pet">Pet Shop</SelectItem>
+                            <SelectItem value="outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        type="submit" 
+                        disabled={loading || !newStoreName.trim() || !newStoreType}
+                      >
+                        {loading ? 'Criando...' : 'Criar Loja'}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Store className="h-5 w-5" />
+                    Informações da Loja
+                  </CardTitle>
+                  <CardDescription>
+                    Configure as informações básicas da sua loja
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="store-name">Nome da Loja *</Label>
+                      <Input
+                        id="store-name"
+                        value={storeSettings.name}
+                        onChange={(e) => setStoreSettings(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Digite o nome da sua loja"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="store-email">E-mail</Label>
+                      <Input
+                        id="store-email"
+                        type="email"
+                        value={storeSettings.email}
+                        onChange={(e) => setStoreSettings(prev => ({ ...prev, email: e.target.value }))}
+                        disabled
+                        className="bg-gray-100"
+                      />
+                      <p className="text-xs text-gray-500">O email não pode ser alterado</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="store-phone">Telefone</Label>
+                      <Input
+                        id="store-phone"
+                        value={storeSettings.phone}
+                        onChange={(e) => setStoreSettings(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="store-cnpj">CNPJ</Label>
+                      <Input
+                        id="store-cnpj"
+                        value={storeSettings.cnpj}
+                        onChange={(e) => setStoreSettings(prev => ({ ...prev, cnpj: e.target.value }))}
+                        placeholder="00.000.000/0000-00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="store-address">Endereço</Label>
+                      <Input
+                        id="store-address"
+                        value={storeSettings.address}
+                        onChange={(e) => setStoreSettings(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Rua, número, bairro"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="store-city">Cidade</Label>
+                      <Input
+                        id="store-city"
+                        value={storeSettings.city}
+                        onChange={(e) => setStoreSettings(prev => ({ ...prev, city: e.target.value }))}
+                        placeholder="Cidade - UF"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="store-email">E-mail</Label>
-                    <Input
-                      id="store-email"
-                      type="email"
-                      value={storeSettings.email}
-                      onChange={(e) => setStoreSettings(prev => ({ ...prev, email: e.target.value }))}
-                      disabled
-                      className="bg-gray-100"
-                    />
-                    <p className="text-xs text-gray-500">O email não pode ser alterado</p>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleSaveStoreSettings} 
+                      disabled={loading || !storeSettings.name.trim()}
+                    >
+                      {loading ? 'Salvando...' : 'Salvar Configurações'}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="store-phone">Telefone</Label>
-                    <Input
-                      id="store-phone"
-                      value={storeSettings.phone}
-                      onChange={(e) => setStoreSettings(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="store-cnpj">CNPJ</Label>
-                    <Input
-                      id="store-cnpj"
-                      value={storeSettings.cnpj}
-                      onChange={(e) => setStoreSettings(prev => ({ ...prev, cnpj: e.target.value }))}
-                      placeholder="00.000.000/0000-00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="store-address">Endereço</Label>
-                    <Input
-                      id="store-address"
-                      value={storeSettings.address}
-                      onChange={(e) => setStoreSettings(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="Rua, número, bairro"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="store-city">Cidade</Label>
-                    <Input
-                      id="store-city"
-                      value={storeSettings.city}
-                      onChange={(e) => setStoreSettings(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="Cidade - UF"
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={handleSaveStoreSettings} 
-                    disabled={loading || !storeSettings.name.trim()}
-                  >
-                    {loading ? 'Salvando...' : 'Salvar Configurações'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Configurações de Notificações */}

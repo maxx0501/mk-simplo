@@ -1,11 +1,21 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, TrendingUp, AlertTriangle, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, TrendingUp, AlertTriangle, DollarSign, Store } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
+  }, []);
+
   // Dados simulados (viria do Supabase)
   const stats = {
     totalProducts: 45,
@@ -25,6 +35,38 @@ const Dashboard = () => {
     { product: 'Saia Midi', quantity: 1, value: 65.00, time: '13:15' },
     { product: 'Conjunto Moletom', quantity: 1, value: 120.00, time: '11:45' }
   ];
+
+  // Se o usuário não tem loja, mostrar tela de criação
+  if (!user?.store_id) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Store className="h-12 w-12 text-blue-600" />
+              </div>
+              <CardTitle className="text-2xl">Bem-vindo ao MKsimplo!</CardTitle>
+              <CardDescription>
+                Você ainda não tem uma loja cadastrada. Crie sua primeira loja para começar a usar o sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button 
+                onClick={() => navigate('/settings')}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Criar Minha Primeira Loja
+              </Button>
+              <p className="text-sm text-gray-500 mt-3">
+                Você pode criar sua loja nas configurações do sistema
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

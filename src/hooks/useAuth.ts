@@ -95,7 +95,7 @@ export const useAuth = () => {
             }));
             navigate('/dashboard');
           } else {
-            console.log('Usuário não tem loja associada, redirecionando para criação...');
+            console.log('Usuário não tem loja associada');
             
             // Salvar dados do usuário sem loja
             localStorage.setItem('mksimplo_user', JSON.stringify({
@@ -106,8 +106,8 @@ export const useAuth = () => {
               store_name: null
             }));
             
-            // Redirecionar para página de criação de loja
-            navigate('/create-store');
+            // Redirecionar para dashboard (eles poderão criar loja nas configurações)
+            navigate('/dashboard');
           }
         }
 
@@ -261,7 +261,7 @@ export const useAuth = () => {
     }
   };
 
-  const createStore = async (storeName: string, phone?: string, cnpj?: string) => {
+  const createStore = async (storeName: string, phone?: string, cnpj?: string, storeType?: string) => {
     setLoading(true);
     
     try {
@@ -335,6 +335,9 @@ export const useAuth = () => {
       };
       
       localStorage.setItem('mksimplo_user', JSON.stringify(updatedUser));
+
+      // Forçar atualização da sidebar
+      window.dispatchEvent(new Event('storage'));
 
       toast({
         title: "Loja criada com sucesso!",
