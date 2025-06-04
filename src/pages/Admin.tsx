@@ -51,50 +51,70 @@ const Admin = () => {
   // Verificar se é superadmin no carregamento
   useEffect(() => {
     const checkAdminAccess = async () => {
-      const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-      
-      if (!user.id) {
-        navigate('/login');
-        return;
-      }
+      try {
+        // Verificar se há uma sessão ativa
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !sessionData.session?.user) {
+          console.log('❌ Usuário não autenticado');
+          navigate('/login');
+          return;
+        }
 
-      // Verificar se é admin demo
-      if (user.email === 'admin@mksimplo.com' && user.role === 'superadmin') {
-        console.log('🔑 Acesso de admin demo autorizado');
-        return;
-      }
+        const user = sessionData.session.user;
+        console.log('🔍 Verificando permissões de admin para:', user.email);
 
-      // Verificar se é admin real no banco
-      const { data: adminData } = await supabase
-        .from('platform_admins')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        // Verificar se é superadmin na tabela profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_superadmin')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (!adminData) {
-        console.log('❌ Acesso negado: usuário não é admin da plataforma');
+        if (profileError) {
+          console.error('❌ Erro ao verificar perfil:', profileError);
+          toast({
+            title: "Erro ao verificar permissões",
+            description: "Não foi possível verificar suas permissões de administrador",
+            variant: "destructive"
+          });
+          navigate('/dashboard');
+          return;
+        }
+
+        if (!profileData?.is_superadmin) {
+          console.log('❌ Acesso negado: usuário não é superadmin');
+          toast({
+            title: "Acesso negado",
+            description: "Você não tem permissão para acessar o painel administrativo",
+            variant: "destructive"
+          });
+          navigate('/dashboard');
+          return;
+        }
+
+        console.log('✅ Acesso de superadmin autorizado para:', user.email);
+      } catch (error: any) {
+        console.error('❌ Erro inesperado ao verificar permissões:', error);
         toast({
-          title: "Acesso negado",
-          description: "Você não tem permissão para acessar o painel administrativo",
+          title: "Erro inesperado",
+          description: "Não foi possível verificar suas permissões",
           variant: "destructive"
         });
         navigate('/dashboard');
-        return;
       }
-
-      console.log('✅ Acesso de superadmin autorizado para:', user.email);
     };
 
     checkAdminAccess();
   }, [navigate, toast]);
 
-  // Carregar TODAS as lojas do banco de dados (sem filtro de usuário)
+  // Carregar TODAS as lojas do banco de dados
   useEffect(() => {
     const loadAllStores = async () => {
       try {
         console.log('🔍 Carregando TODAS as lojas para o painel admin...');
         
-        // Buscar todas as lojas sem restrição de RLS (superadmin tem acesso total)
+        // Com as novas políticas RLS, superadmins podem ver todas as lojas
         const { data, error } = await supabase
           .from('stores')
           .select('*')
@@ -287,7 +307,8 @@ const Admin = () => {
       }, 0)
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem('mksimplo_user');
     toast({
       title: "Logout realizado",

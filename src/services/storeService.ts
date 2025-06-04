@@ -38,6 +38,32 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     throw new Error('Você já possui uma loja cadastrada.');
   }
 
+  // Verificar/criar perfil do usuário
+  console.log('Verificando perfil do usuário...');
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  // Se não tem perfil, criar um
+  if (!profileData) {
+    console.log('Criando perfil para o usuário...');
+    const { error: createProfileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+        is_superadmin: false
+      });
+
+    if (createProfileError) {
+      console.error('Erro ao criar perfil:', createProfileError);
+      // Não bloquear a criação da loja por isso
+    }
+  }
+
   // Criar a loja com dados básicos - SEMPRE começar com dados limpos
   console.log('Criando loja na tabela stores...');
   console.log('Dados da loja:', {
