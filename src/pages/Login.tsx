@@ -1,159 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Store, ArrowLeft } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { DemoCredentials } from '@/components/auth/DemoCredentials';
+import { clearSession } from '@/utils/sessionManager';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
   useEffect(() => {
-    const clearSession = async () => {
-      try {
-        // Forçar logout completo
-        await supabase.auth.signOut({ scope: 'global' });
-        
-        // Limpar todos os dados locais
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Aguardar um pouco para garantir que a limpeza foi feita
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('Sessão completamente limpa, página de login pronta');
-      } catch (error) {
-        console.error('Erro ao limpar sessão:', error);
-        // Mesmo com erro, limpar localStorage
-        localStorage.clear();
-        sessionStorage.clear();
-      }
-    };
     clearSession();
   }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      console.log('Tentando fazer login com email:', email);
-
-      if (email === 'admin@mksimplo.com') {
-        console.log('Login de admin demo');
-        localStorage.setItem('mksimplo_user', JSON.stringify({
-          id: 'demo-admin-id',
-          email: 'admin@mksimplo.com',
-          role: 'superadmin',
-          store_id: null
-        }));
-        
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao painel administrativo"
-        });
-        
-        navigate('/admin');
-        return;
-      }
-
-      // Garantir logout antes de tentar novo login
-      await supabase.auth.signOut({ scope: 'global' });
-      localStorage.clear();
-      sessionStorage.clear();
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
-      });
-
-      if (error) {
-        console.error('Erro no login:', error);
-        throw error;
-      }
-
-      console.log('Login bem-sucedido:', data);
-
-      if (data.user) {
-        const { data: adminData } = await supabase
-          .from('platform_admins')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-
-        if (adminData) {
-          console.log('Usuário é admin da plataforma');
-          localStorage.setItem('mksimplo_user', JSON.stringify({
-            id: data.user.id,
-            email: data.user.email,
-            role: 'superadmin',
-            store_id: null
-          }));
-          navigate('/admin');
-        } else {
-          const { data: userStoreData } = await supabase
-            .from('user_stores')
-            .select('*, stores(*)')
-            .eq('user_id', data.user.id)
-            .maybeSingle();
-
-          if (userStoreData && userStoreData.stores) {
-            console.log('Usuário pertence a uma loja:', userStoreData.stores.name);
-            localStorage.setItem('mksimplo_user', JSON.stringify({
-              id: data.user.id,
-              email: data.user.email,
-              role: userStoreData.role,
-              store_id: userStoreData.store_id,
-              store_name: userStoreData.stores.name
-            }));
-          } else {
-            console.log('Usuário não possui loja, configurando dados básicos');
-            localStorage.setItem('mksimplo_user', JSON.stringify({
-              id: data.user.id,
-              email: data.user.email,
-              role: 'owner',
-              store_id: null,
-              store_name: null
-            }));
-          }
-          navigate('/dashboard');
-        }
-
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao MKsimplo"
-        });
-      }
-    } catch (error: any) {
-      console.error('Erro no login:', error);
-      
-      let errorMessage = "Email ou senha incorretos";
-      
-      if (error.message === "Invalid login credentials") {
-        errorMessage = "Email ou senha incorretos. Verifique se sua conta foi confirmada.";
-      } else if (error.message === "Email not confirmed") {
-        errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
-      } else if (error.message.includes("Email")) {
-        errorMessage = "Problema com o email. Verifique se está correto.";
-      }
-      
-      toast({
-        title: "Erro no login",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4">
@@ -174,37 +31,7 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={loading}
-              >
-                {loading ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
+            <LoginForm />
             
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
@@ -215,11 +42,7 @@ const Login = () => {
               </p>
             </div>
 
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-              <p className="font-medium">Para testar o painel administrativo:</p>
-              <p>• Admin: admin@mksimplo.com</p>
-              <p>• Senha: qualquer senha</p>
-            </div>
+            <DemoCredentials />
           </CardContent>
         </Card>
       </div>
