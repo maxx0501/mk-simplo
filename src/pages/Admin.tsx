@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,29 +48,71 @@ const Admin = () => {
   const [selectedSubscriptionStatus, setSelectedSubscriptionStatus] = useState('all');
   const { toast } = useToast();
 
-  // Carregar lojas do banco de dados
+  // Verificar se é superadmin no carregamento
   useEffect(() => {
-    const loadStores = async () => {
+    const checkAdminAccess = async () => {
+      const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+      
+      if (!user.id) {
+        navigate('/login');
+        return;
+      }
+
+      // Verificar se é admin demo
+      if (user.email === 'admin@mksimplo.com' && user.role === 'superadmin') {
+        console.log('🔑 Acesso de admin demo autorizado');
+        return;
+      }
+
+      // Verificar se é admin real no banco
+      const { data: adminData } = await supabase
+        .from('platform_admins')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!adminData) {
+        console.log('❌ Acesso negado: usuário não é admin da plataforma');
+        toast({
+          title: "Acesso negado",
+          description: "Você não tem permissão para acessar o painel administrativo",
+          variant: "destructive"
+        });
+        navigate('/dashboard');
+        return;
+      }
+
+      console.log('✅ Acesso de superadmin autorizado para:', user.email);
+    };
+
+    checkAdminAccess();
+  }, [navigate, toast]);
+
+  // Carregar TODAS as lojas do banco de dados (sem filtro de usuário)
+  useEffect(() => {
+    const loadAllStores = async () => {
       try {
-        console.log('Carregando lojas do banco de dados...');
+        console.log('🔍 Carregando TODAS as lojas para o painel admin...');
+        
+        // Buscar todas as lojas sem restrição de RLS (superadmin tem acesso total)
         const { data, error } = await supabase
           .from('stores')
           .select('*')
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('Erro ao carregar lojas:', error);
+          console.error('❌ Erro ao carregar lojas:', error);
           toast({
             title: "Erro ao carregar lojas",
             description: error.message,
             variant: "destructive"
           });
         } else {
-          console.log('Lojas carregadas:', data);
+          console.log('✅ Lojas carregadas para admin:', data?.length || 0, 'lojas encontradas');
           setStores(data || []);
         }
       } catch (error: any) {
-        console.error('Erro inesperado ao carregar lojas:', error);
+        console.error('❌ Erro inesperado ao carregar lojas:', error);
         toast({
           title: "Erro inesperado",
           description: "Não foi possível carregar as lojas",
@@ -82,7 +123,7 @@ const Admin = () => {
       }
     };
 
-    loadStores();
+    loadAllStores();
   }, [toast]);
 
   const filteredStores = stores.filter(store => {
@@ -276,7 +317,7 @@ const Admin = () => {
               <Crown className="h-8 w-8 text-purple-600 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Administração MKsimplo</h1>
-                <p className="text-gray-600">Painel de controle da plataforma</p>
+                <p className="text-gray-600">Painel de controle da plataforma - Todas as lojas</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">

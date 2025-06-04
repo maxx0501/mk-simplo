@@ -38,13 +38,16 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     throw new Error('Você já possui uma loja cadastrada.');
   }
 
-  // Tentar criar a loja com dados básicos incluindo user_id
+  // Criar a loja com dados básicos - SEMPRE começar com dados limpos
   console.log('Criando loja na tabela stores...');
   console.log('Dados da loja:', {
     name: storeName.trim(),
     email: user.email || '',
     owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
-    user_id: user.id
+    user_id: user.id,
+    plan_type: 'free',
+    subscription_status: 'trial',
+    status: 'active'
   });
 
   const { data: storeData, error: storeError } = await supabase
@@ -57,6 +60,7 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
       owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
       plan_type: 'free',
       status: 'active',
+      subscription_status: 'trial',
       trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       user_id: user.id
     })
@@ -96,6 +100,7 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
   }
 
   console.log('Associação criada com sucesso');
+  console.log('🧼 Nova loja criada SEM dados pré-populados - sistema totalmente limpo');
 
   // Retornar dados da loja criada
   return {
