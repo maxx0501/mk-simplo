@@ -1,24 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const loginUser = async (email: string, password: string) => {
   console.log('Tentando fazer login com email:', email);
-
-  // Admin demo check - usar um approach mais limpo
-  if (email === 'admin@mksimplo.com' && password === 'admin123') {
-    console.log('Login de admin demo autorizado');
-    return {
-      success: true,
-      userData: {
-        id: 'demo-admin-id',
-        email: 'admin@mksimplo.com',
-        role: 'superadmin',
-        store_id: null
-      },
-      isDemo: true,
-      redirectTo: '/admin'
-    };
-  }
 
   // Tentar fazer login
   const { data, error } = await supabase.auth.signInWithPassword({

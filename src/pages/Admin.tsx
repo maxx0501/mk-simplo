@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +9,7 @@ import {
   Crown,
   LogOut,
   Building,
-  RefreshCw,
-  Plus
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { createTestStores, loadStoresForAdmin } from '@/utils/adminTestUtils';
 
 interface Store {
   id: string;
@@ -39,7 +38,6 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userValidated, setUserValidated] = useState(false);
-  const [isDemoData, setIsDemoData] = useState(false);
   const { toast } = useToast();
 
   // Verificar se é superadmin no carregamento
@@ -56,13 +54,6 @@ const Admin = () => {
 
         const user = JSON.parse(userData);
         console.log('🔍 Verificando permissões de admin para:', user.email);
-
-        // Verificar se é admin demo
-        if (user.isDemo && user.email === 'admin@mksimplo.com') {
-          console.log('✅ Acesso de admin demo autorizado');
-          setUserValidated(true);
-          return;
-        }
 
         // Para usuários reais, verificar se tem role superadmin
         if (user.role === 'superadmin') {
@@ -120,19 +111,27 @@ const Admin = () => {
 
     try {
       setLoading(true);
-      console.log('🔍 Carregando lojas...');
+      console.log('🔍 Carregando lojas do banco...');
       
-      const result = await loadStoresForAdmin();
-      
-      if (result.success) {
-        console.log('✅ Lojas carregadas:', result.data.length);
-        setStores(result.data);
-        setIsDemoData(result.isDemoData || false);
-      } else {
-        console.log('📭 Nenhuma loja encontrada');
+      const { data: storesData, error } = await supabase
+        .from('stores')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Erro na consulta:', error);
+        toast({
+          title: "Erro ao carregar lojas",
+          description: "Não foi possível carregar as lojas: " + error.message,
+          variant: "destructive"
+        });
         setStores([]);
-        setIsDemoData(false);
+        return;
       }
+
+      console.log('📊 Lojas encontradas:', storesData?.length || 0);
+      setStores(storesData || []);
+      
     } catch (error: any) {
       console.error('❌ Erro inesperado:', error);
       toast({
@@ -140,6 +139,7 @@ const Admin = () => {
         description: "Não foi possível carregar as lojas: " + error.message,
         variant: "destructive"
       });
+      setStores([]);
     } finally {
       setLoading(false);
     }
@@ -154,39 +154,6 @@ const Admin = () => {
       title: "Dados atualizados",
       description: "As informações das lojas foram recarregadas."
     });
-  };
-
-  // Função para criar lojas de teste
-  const handleCreateTestStores = async () => {
-    try {
-      setRefreshing(true);
-      console.log('🧪 Criando lojas de teste...');
-      
-      const result = await createTestStores();
-      
-      if (result.success) {
-        const message = result.isDemoData 
-          ? `${result.data?.length || 0} lojas de demonstração foram carregadas.`
-          : `${result.data?.length || 0} lojas de teste foram criadas no banco.`;
-          
-        toast({
-          title: "Lojas de teste criadas",
-          description: message
-        });
-        await loadStores(); // Recarregar dados
-      } else {
-        throw new Error(result.error || 'Erro desconhecido');
-      }
-    } catch (error: any) {
-      console.error('❌ Erro ao criar lojas de teste:', error);
-      toast({
-        title: "Erro ao criar lojas de teste",
-        description: error.message || "Erro desconhecido",
-        variant: "destructive"
-      });
-    } finally {
-      setRefreshing(false);
-    }
   };
 
   // Carregar lojas quando o usuário for validado
@@ -264,10 +231,7 @@ const Admin = () => {
               <Crown className="h-8 w-8 text-purple-600 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Painel Administrativo</h1>
-                <p className="text-gray-600">
-                  Gestão de lojas do sistema
-                  {isDemoData && <span className="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">DEMO</span>}
-                </p>
+                <p className="text-gray-600">Gestão de lojas do sistema</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -331,31 +295,16 @@ const Admin = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>
-                Lojas Cadastradas ({stores.length})
-                {isDemoData && <span className="text-sm font-normal text-gray-500 ml-2">(Dados de demonstração)</span>}
-              </CardTitle>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCreateTestStores}
-                  disabled={refreshing}
-                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {isDemoData ? 'Carregar Lojas Demo' : 'Criar Lojas de Teste'}
-                </Button>
-              </div>
+              <CardTitle>Lojas Cadastradas ({stores.length})</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -364,14 +313,6 @@ const Admin = () => {
                 <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium mb-2">Nenhuma loja encontrada</h3>
                 <p className="mb-4">Não há lojas cadastradas no sistema ainda.</p>
-                <Button
-                  onClick={handleCreateTestStores}
-                  disabled={refreshing}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Criar Lojas de Teste
-                </Button>
               </div>
             ) : (
               <Table>

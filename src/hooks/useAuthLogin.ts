@@ -15,22 +15,6 @@ export const useAuthLogin = () => {
     try {
       const result = await loginUser(email, password);
       
-      if (result.isDemo) {
-        // Para admin demo, usar dados especiais no localStorage
-        localStorage.setItem('mksimplo_user', JSON.stringify({
-          ...result.userData,
-          isDemo: true
-        }));
-        
-        toast({
-          title: "Login de admin realizado!",
-          description: "Bem-vindo ao painel administrativo da plataforma"
-        });
-        
-        navigate('/admin');
-        return result;
-      }
-
       localStorage.setItem('mksimplo_user', JSON.stringify(result.userData));
       
       toast({

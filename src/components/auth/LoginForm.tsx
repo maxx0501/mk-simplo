@@ -69,14 +69,6 @@ export const LoginForm = () => {
         </Button>
       </form>
 
-      {/* Dica de login demo para admin */}
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="text-sm text-blue-800">
-          <strong>Acesso de Demonstração:</strong><br />
-          Admin: admin@mksimplo.com / admin123
-        </div>
-      </div>
-
       {showResend && (
         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
