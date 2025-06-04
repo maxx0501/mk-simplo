@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { createTestStores } from '@/utils/adminTestUtils';
+import { createTestStores, loadStoresForAdmin } from '@/utils/adminTestUtils';
 
 interface Store {
   id: string;
@@ -39,6 +39,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userValidated, setUserValidated] = useState(false);
+  const [isDemoData, setIsDemoData] = useState(false);
   const { toast } = useToast();
 
   // Verificar se é superadmin no carregamento
@@ -113,49 +114,25 @@ const Admin = () => {
     checkAdminAccess();
   }, [navigate, toast]);
 
-  // Função para carregar lojas do banco
-  const loadStoresFromDatabase = async () => {
-    try {
-      console.log('🔍 Carregando todas as lojas da tabela stores...');
-      
-      // Buscar TODAS as lojas diretamente da tabela stores
-      const { data: storesData, error } = await supabase
-        .from('stores')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Erro na consulta:', error);
-        throw error;
-      }
-
-      console.log('📊 Resultado da consulta stores:', {
-        encontradas: storesData?.length || 0,
-        dados: storesData
-      });
-
-      if (storesData && storesData.length > 0) {
-        console.log('✅ Lojas encontradas:', storesData.length);
-        setStores(storesData);
-      } else {
-        console.log('📭 Nenhuma loja encontrada na tabela stores');
-        setStores([]);
-      }
-
-      return storesData?.length || 0;
-    } catch (error: any) {
-      console.error('❌ Erro ao carregar lojas:', error);
-      throw error;
-    }
-  };
-
-  // Carregar lojas
+  // Função para carregar lojas
   const loadStores = async () => {
     if (!userValidated) return;
 
     try {
       setLoading(true);
-      await loadStoresFromDatabase();
+      console.log('🔍 Carregando lojas...');
+      
+      const result = await loadStoresForAdmin();
+      
+      if (result.success) {
+        console.log('✅ Lojas carregadas:', result.data.length);
+        setStores(result.data);
+        setIsDemoData(result.isDemoData || false);
+      } else {
+        console.log('📭 Nenhuma loja encontrada');
+        setStores([]);
+        setIsDemoData(false);
+      }
     } catch (error: any) {
       console.error('❌ Erro inesperado:', error);
       toast({
@@ -179,7 +156,7 @@ const Admin = () => {
     });
   };
 
-  // Função para criar lojas de teste no banco
+  // Função para criar lojas de teste
   const handleCreateTestStores = async () => {
     try {
       setRefreshing(true);
@@ -188,9 +165,13 @@ const Admin = () => {
       const result = await createTestStores();
       
       if (result.success) {
+        const message = result.isDemoData 
+          ? `${result.data?.length || 0} lojas de demonstração foram carregadas.`
+          : `${result.data?.length || 0} lojas de teste foram criadas no banco.`;
+          
         toast({
           title: "Lojas de teste criadas",
-          description: `${result.data?.length || 0} lojas de teste foram criadas no banco.`
+          description: message
         });
         await loadStores(); // Recarregar dados
       } else {
@@ -283,7 +264,10 @@ const Admin = () => {
               <Crown className="h-8 w-8 text-purple-600 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Painel Administrativo</h1>
-                <p className="text-gray-600">Gestão de lojas do sistema</p>
+                <p className="text-gray-600">
+                  Gestão de lojas do sistema
+                  {isDemoData && <span className="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">DEMO</span>}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -347,7 +331,10 @@ const Admin = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Lojas Cadastradas ({stores.length})</CardTitle>
+              <CardTitle>
+                Lojas Cadastradas ({stores.length})
+                {isDemoData && <span className="text-sm font-normal text-gray-500 ml-2">(Dados de demonstração)</span>}
+              </CardTitle>
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
@@ -366,7 +353,7 @@ const Admin = () => {
                   className="text-blue-600 border-blue-600 hover:bg-blue-50"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Criar Lojas de Teste
+                  {isDemoData ? 'Carregar Lojas Demo' : 'Criar Lojas de Teste'}
                 </Button>
               </div>
             </div>
