@@ -106,18 +106,18 @@ const Admin = () => {
   // Função para carregar lojas do banco
   const loadStoresFromDatabase = async () => {
     try {
-      console.log('🔍 Tentando carregar lojas reais do banco de dados...');
+      console.log('🔍 Carregando todas as lojas do banco...');
       
-      // Tentar diferentes abordagens para acessar os dados
+      // Buscar TODAS as lojas do banco
       const { data: storesData, error } = await supabase
         .from('stores')
         .select('id, name, owner_name, plan_type, created_at, status')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Resultado da busca:', {
-        dados: storesData?.length || 0,
+      console.log('📊 Resultado da busca de lojas:', {
+        encontradas: storesData?.length || 0,
         erro: error?.message || 'Nenhum',
-        storesData
+        dados: storesData
       });
 
       if (error) {
@@ -126,51 +126,18 @@ const Admin = () => {
       }
 
       if (storesData && storesData.length > 0) {
-        console.log('✅ Lojas reais encontradas:', storesData.length);
+        console.log('✅ Lojas encontradas no banco:', storesData.length);
         setStores(storesData);
         return true;
       }
 
-      console.log('📭 Nenhuma loja real encontrada no banco');
+      console.log('📭 Nenhuma loja encontrada no banco');
+      setStores([]);
       return false;
     } catch (error: any) {
       console.error('❌ Erro ao carregar lojas:', error);
-      return false;
+      throw error;
     }
-  };
-
-  // Função para criar lojas de exemplo
-  const createExampleStores = () => {
-    console.log('📝 Criando dados de exemplo...');
-    const exampleStores = [
-      {
-        id: 'example-1',
-        name: 'Tech Store Premium',
-        owner_name: 'João Silva Santos',
-        plan_type: 'pro',
-        created_at: '2024-01-15T10:30:00Z',
-        status: 'active'
-      },
-      {
-        id: 'example-2', 
-        name: 'Loja da Maria',
-        owner_name: 'Maria Santos Oliveira',
-        plan_type: 'basic',
-        created_at: '2024-02-20T14:45:00Z',
-        status: 'active'
-      },
-      {
-        id: 'example-3',
-        name: 'SuperMercado Central',
-        owner_name: 'Carlos Roberto Lima',
-        plan_type: 'premium',
-        created_at: '2024-03-10T09:15:00Z',
-        status: 'active'
-      }
-    ];
-    
-    setStores(exampleStores);
-    console.log('✅ Dados de exemplo criados:', exampleStores.length, 'lojas');
   };
 
   // Carregar lojas
@@ -179,32 +146,11 @@ const Admin = () => {
 
     try {
       setLoading(true);
-      
-      // Verificar se é admin demo
-      const userData = localStorage.getItem('mksimplo_user');
-      const user = userData ? JSON.parse(userData) : null;
-      
-      // Primeiro, sempre tentar carregar lojas reais do banco
-      const realStoresLoaded = await loadStoresFromDatabase();
-      
-      // Se não conseguiu carregar lojas reais E é admin demo, usar exemplos
-      if (!realStoresLoaded && user?.isDemo && user?.email === 'admin@mksimplo.com') {
-        console.log('👤 Admin demo: usando dados de exemplo como fallback');
-        createExampleStores();
-      } else if (!realStoresLoaded) {
-        // Para usuários reais sem lojas
-        console.log('📭 Nenhuma loja encontrada');
-        setStores([]);
-        toast({
-          title: "Nenhuma loja encontrada",
-          description: "Não há lojas cadastradas no sistema ainda.",
-        });
-      }
-
+      await loadStoresFromDatabase();
     } catch (error: any) {
       console.error('❌ Erro inesperado:', error);
       toast({
-        title: "Erro inesperado",
+        title: "Erro ao carregar lojas",
         description: "Não foi possível carregar as lojas: " + error.message,
         variant: "destructive"
       });

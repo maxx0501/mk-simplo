@@ -4,8 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 export const createTestStores = async () => {
   console.log('🧪 Criando lojas de teste no banco...');
   
-  // UUID fixo para testes (você pode usar qualquer UUID válido para testes)
-  const testUserId = '550e8400-e29b-41d4-a716-446655440000';
+  // Obter o usuário atual
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    console.error('❌ Usuário não autenticado:', userError);
+    return { success: false, error: { message: 'Usuário não autenticado' } };
+  }
+
+  console.log('👤 Usuário atual:', user.id, user.email);
   
   const testStores = [
     {
@@ -16,7 +23,7 @@ export const createTestStores = async () => {
       status: 'active',
       phone: '(11) 99999-1234',
       cnpj: '12.345.678/0001-90',
-      user_id: testUserId
+      user_id: user.id
     },
     {
       name: 'Boutique Fashion Style',
@@ -25,7 +32,7 @@ export const createTestStores = async () => {
       plan_type: 'premium',
       status: 'active',
       phone: '(11) 88888-5678',
-      user_id: testUserId
+      user_id: user.id
     },
     {
       name: 'Padaria do Bairro',
@@ -34,7 +41,7 @@ export const createTestStores = async () => {
       plan_type: 'basic',
       status: 'active',
       phone: '(11) 77777-9012',
-      user_id: testUserId
+      user_id: user.id
     },
     {
       name: 'Farmácia Vida Saudável',
@@ -43,23 +50,58 @@ export const createTestStores = async () => {
       plan_type: 'free',
       status: 'active',
       phone: '(11) 66666-3456',
-      user_id: testUserId
+      user_id: user.id
+    },
+    {
+      name: 'Oficina do João',
+      owner_name: 'João Mecânico Silva',
+      email: 'joao@oficina.com',
+      plan_type: 'basic',
+      status: 'active',
+      phone: '(11) 55555-7890',
+      user_id: user.id
     }
   ];
 
   try {
-    const { data, error } = await supabase
+    // Inserir as lojas
+    console.log('📝 Inserindo lojas na tabela stores...');
+    const { data: storesData, error: storesError } = await supabase
       .from('stores')
       .insert(testStores)
       .select();
 
-    if (error) {
-      console.error('❌ Erro ao criar lojas de teste:', error);
-      return { success: false, error };
+    if (storesError) {
+      console.error('❌ Erro ao criar lojas de teste:', storesError);
+      return { success: false, error: storesError };
     }
 
-    console.log('✅ Lojas de teste criadas:', data?.length);
-    return { success: true, data };
+    console.log('✅ Lojas criadas com sucesso:', storesData?.length);
+
+    // Criar associações na tabela user_stores para cada loja criada
+    if (storesData && storesData.length > 0) {
+      console.log('🔗 Criando associações user_stores...');
+      
+      const userStoreAssociations = storesData.map(store => ({
+        user_id: user.id,
+        store_id: store.id,
+        role: 'owner'
+      }));
+
+      const { error: associationError } = await supabase
+        .from('user_stores')
+        .insert(userStoreAssociations);
+
+      if (associationError) {
+        console.error('❌ Erro ao criar associações user_stores:', associationError);
+        // Não falhar completamente, apenas avisar
+        console.log('⚠️ Lojas criadas mas associações falharam');
+      } else {
+        console.log('✅ Associações user_stores criadas com sucesso');
+      }
+    }
+
+    return { success: true, data: storesData };
   } catch (error) {
     console.error('❌ Erro inesperado ao criar lojas:', error);
     return { success: false, error };
