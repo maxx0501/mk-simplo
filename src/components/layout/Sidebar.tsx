@@ -10,7 +10,6 @@ import {
   ShoppingCart, 
   TrendingUp, 
   Users, 
-  Globe, 
   Settings,
   LogOut,
   ArrowUp
@@ -24,7 +23,6 @@ const navigationItems = [
   { name: 'Estoque', href: '/inventory', icon: ArrowUp },
   { name: 'Relatórios', href: '/reports', icon: TrendingUp },
   { name: 'Usuários', href: '/users', icon: Users },
-  { name: 'Catálogo', href: '/catalog', icon: Globe },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ];
 
@@ -55,7 +53,7 @@ export const Sidebar = () => {
         {/* Store Name */}
         <div className="mt-5 px-4">
           <p className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider">
-            Loja Atual
+            Loja
           </p>
           <p className="text-sm font-medium text-sidebar-foreground mt-1">
             {user.store_name || 'Loja Exemplo'}
