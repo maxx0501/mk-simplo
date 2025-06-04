@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -265,28 +264,34 @@ export const useAuth = () => {
     setLoading(true);
     
     try {
-      console.log('Criando loja:', storeName);
+      console.log('=== CRIANDO LOJA ===');
+      console.log('Nome da loja:', storeName);
       
-      const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+      // Verificar se o usuário está autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (!user.id) {
+      if (userError || !user) {
+        console.error('Erro ao obter usuário:', userError);
         toast({
-          title: "Erro",
+          title: "Erro de autenticação",
           description: "Usuário não encontrado. Faça login novamente.",
           variant: "destructive"
         });
         return false;
       }
 
-      // Criar a loja
+      console.log('Usuário autenticado:', user.id);
+
+      // Criar a loja primeiro
+      console.log('Inserindo loja na tabela stores...');
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .insert({
-          name: storeName,
-          email: user.email,
+          name: storeName.trim(),
+          email: user.email || '',
           phone: phone || null,
           cnpj: cnpj || null,
-          owner_name: user.email?.split('@')[0] || 'Proprietário',
+          owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
           plan_type: 'free',
           status: 'active',
           trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -307,6 +312,7 @@ export const useAuth = () => {
       console.log('Loja criada com sucesso:', storeData);
 
       // Associar usuário à loja
+      console.log('Associando usuário à loja...');
       const { error: userStoreError } = await supabase
         .from('user_stores')
         .insert({
@@ -317,9 +323,13 @@ export const useAuth = () => {
 
       if (userStoreError) {
         console.error('Erro ao associar usuário à loja:', userStoreError);
+        
+        // Se falhou ao associar, tentar deletar a loja criada
+        await supabase.from('stores').delete().eq('id', storeData.id);
+        
         toast({
           title: "Erro ao associar loja",
-          description: "Loja criada mas não foi possível associá-la ao usuário.",
+          description: "Não foi possível associar a loja ao usuário.",
           variant: "destructive"
         });
         return false;
@@ -329,7 +339,9 @@ export const useAuth = () => {
 
       // Atualizar dados do usuário no localStorage
       const updatedUser = {
-        ...user,
+        id: user.id,
+        email: user.email,
+        role: 'owner',
         store_id: storeData.id,
         store_name: storeData.name
       };
