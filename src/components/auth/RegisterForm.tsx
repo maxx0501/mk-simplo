@@ -11,15 +11,13 @@ export const RegisterForm = () => {
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [cnpj, setCnpj] = useState('');
   const navigate = useNavigate();
   const { handleRegister, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const success = await handleRegister(storeName, ownerName, email, password, phone, cnpj);
+    const success = await handleRegister(storeName, ownerName, email, password);
     
     if (success) {
       navigate('/login');
@@ -59,26 +57,6 @@ export const RegisterForm = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="phone">WhatsApp (opcional)</Label>
-        <Input
-          id="phone"
-          placeholder="(11) 99999-9999"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="cnpj">CNPJ (opcional)</Label>
-        <Input
-          id="cnpj"
-          placeholder="00.000.000/0001-00"
-          value={cnpj}
-          onChange={(e) => setCnpj(e.target.value)}
         />
       </div>
 

@@ -4,21 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Função para gerar nomes únicos de lojas
-const generateUniqueStoreName = (email: string) => {
-  const baseNames = [
-    'Loja Premium', 'MegaStore', 'Super Market', 'Elite Store', 'Top Shopping',
-    'Nova Loja', 'Best Store', 'Quick Shop', 'Smart Store', 'Fast Market',
-    'Modern Store', 'City Shop', 'Express Store', 'Prime Market', 'Blue Store'
-  ];
-  
-  const emailPrefix = email.split('@')[0];
-  const randomName = baseNames[Math.floor(Math.random() * baseNames.length)];
-  const randomNumber = Math.floor(Math.random() * 1000);
-  
-  return `${randomName} ${emailPrefix.charAt(0).toUpperCase()}${emailPrefix.slice(1)} ${randomNumber}`;
-};
-
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -134,7 +119,7 @@ export const useAuth = () => {
     }
   };
 
-  const handleRegister = async (storeName: string, ownerName: string, email: string, password: string, phone?: string, cnpj?: string) => {
+  const handleRegister = async (storeName: string, ownerName: string, email: string, password: string) => {
     setLoading(true);
     
     try {
@@ -163,8 +148,7 @@ export const useAuth = () => {
         options: {
           data: {
             full_name: ownerName,
-            store_name: storeName,
-            phone: phone
+            store_name: storeName
           }
         }
       });
@@ -198,8 +182,8 @@ export const useAuth = () => {
             name: storeName,
             email: email.trim(),
             owner_name: ownerName,
-            phone: phone || null,
-            cnpj: cnpj || null,
+            phone: null,
+            cnpj: null,
             plan_type: 'trial',
             status: 'active',
             subscription_status: 'trial',
