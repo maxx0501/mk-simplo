@@ -30,6 +30,7 @@ export const useAuth = () => {
     try {
       console.log('Tentando fazer login com email:', email);
 
+      // Admin demo check
       if (email === 'admin@mksimplo.com') {
         console.log('Login de admin demo');
         localStorage.setItem('mksimplo_user', JSON.stringify({
@@ -48,11 +49,7 @@ export const useAuth = () => {
         return;
       }
 
-      // Garantir logout antes de tentar novo login
-      await supabase.auth.signOut({ scope: 'global' });
-      localStorage.clear();
-      sessionStorage.clear();
-
+      // Tentar fazer login
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
@@ -66,6 +63,7 @@ export const useAuth = () => {
       console.log('Login bem-sucedido:', data);
 
       if (data.user) {
+        // Verificar se é admin da plataforma
         const { data: adminData } = await supabase
           .from('platform_admins')
           .select('*')
@@ -82,6 +80,7 @@ export const useAuth = () => {
           }));
           navigate('/admin');
         } else {
+          // Buscar dados da loja do usuário
           const { data: userStoreData } = await supabase
             .from('user_stores')
             .select('*, stores(*)')
@@ -98,50 +97,13 @@ export const useAuth = () => {
               store_name: userStoreData.stores.name
             }));
           } else {
-            // Criar uma nova loja para o usuário com nome único
-            console.log('Criando nova loja para o usuário');
-            const uniqueStoreName = generateUniqueStoreName(data.user.email || '');
-            
-            const { data: newStore, error: storeError } = await supabase
-              .from('stores')
-              .insert({
-                name: uniqueStoreName,
-                email: data.user.email,
-                owner_name: data.user.email?.split('@')[0] || 'Usuário',
-                plan_type: 'free',
-                subscription_status: 'trial',
-                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              })
-              .select()
-              .single();
-
-            if (storeError) {
-              console.error('Erro ao criar loja:', storeError);
-              throw storeError;
-            }
-
-            // Associar usuário à loja
-            const { error: userStoreError } = await supabase
-              .from('user_stores')
-              .insert({
-                user_id: data.user.id,
-                store_id: newStore.id,
-                role: 'owner'
-              });
-
-            if (userStoreError) {
-              console.error('Erro ao associar usuário à loja:', userStoreError);
-              throw userStoreError;
-            }
-
-            console.log('Nova loja criada:', uniqueStoreName);
-            localStorage.setItem('mksimplo_user', JSON.stringify({
-              id: data.user.id,
-              email: data.user.email,
-              role: 'owner',
-              store_id: newStore.id,
-              store_name: uniqueStoreName
-            }));
+            console.log('Usuário não tem loja associada');
+            toast({
+              title: "Erro no login",
+              description: "Usuário não possui loja associada. Entre em contato com o suporte.",
+              variant: "destructive"
+            });
+            return;
           }
           navigate('/dashboard');
         }
@@ -157,11 +119,9 @@ export const useAuth = () => {
       let errorMessage = "Email ou senha incorretos";
       
       if (error.message === "Invalid login credentials") {
-        errorMessage = "Email ou senha incorretos. Verifique se sua conta foi confirmada.";
+        errorMessage = "Email ou senha incorretos. Verifique suas credenciais.";
       } else if (error.message === "Email not confirmed") {
         errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
-      } else if (error.message.includes("Email")) {
-        errorMessage = "Problema com o email. Verifique se está correto.";
       }
       
       toast({
@@ -174,5 +134,132 @@ export const useAuth = () => {
     }
   };
 
-  return { handleLogin, loading };
+  const handleRegister = async (storeName: string, ownerName: string, email: string, password: string, phone?: string, cnpj?: string) => {
+    setLoading(true);
+    
+    try {
+      console.log('Iniciando registro com email:', email);
+      
+      // Verificar se já existe uma conta com este email
+      const { data: existingStore } = await supabase
+        .from('stores')
+        .select('email')
+        .eq('email', email.trim())
+        .maybeSingle();
+
+      if (existingStore) {
+        toast({
+          title: "Email já cadastrado",
+          description: "Este email já possui uma conta. Tente fazer login.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Criar o usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            full_name: ownerName,
+            store_name: storeName,
+            phone: phone
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Erro no registro:', authError);
+        
+        if (authError.message === "User already registered") {
+          toast({
+            title: "Email já cadastrado",
+            description: "Este email já possui uma conta. Tente fazer login.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erro no cadastro",
+            description: authError.message || "Erro ao criar conta. Tente novamente.",
+            variant: "destructive"
+          });
+        }
+        return false;
+      }
+
+      console.log('Usuário criado no auth:', authData);
+
+      if (authData.user) {
+        // Criar registro na tabela stores
+        const { data: storeData, error: storeError } = await supabase
+          .from('stores')
+          .insert({
+            name: storeName,
+            email: email.trim(),
+            owner_name: ownerName,
+            phone: phone || null,
+            cnpj: cnpj || null,
+            plan_type: 'trial',
+            status: 'active',
+            subscription_status: 'trial',
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .select()
+          .single();
+
+        if (storeError) {
+          console.error('Erro ao criar loja:', storeError);
+          toast({
+            title: "Erro ao criar loja",
+            description: "Conta criada mas houve problema ao configurar a loja.",
+            variant: "destructive"
+          });
+          return false;
+        }
+
+        console.log('Loja criada com sucesso:', storeData);
+
+        // Criar registro na tabela user_stores para associar o usuário à loja
+        const { error: userStoreError } = await supabase
+          .from('user_stores')
+          .insert({
+            user_id: authData.user.id,
+            store_id: storeData.id,
+            role: 'owner'
+          });
+
+        if (userStoreError) {
+          console.error('Erro ao associar usuário à loja:', userStoreError);
+          toast({
+            title: "Erro na associação",
+            description: "Problema ao associar usuário à loja.",
+            variant: "destructive"
+          });
+          return false;
+        }
+
+        console.log('Usuário associado à loja com sucesso');
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Faça login para acessar sua conta.",
+        });
+        
+        return true;
+      }
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      toast({
+        title: "Erro no cadastro",
+        description: error.message || "Erro inesperado. Tente novamente.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { handleLogin, handleRegister, loading };
 };
