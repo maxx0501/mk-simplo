@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -264,26 +265,65 @@ export const useAuth = () => {
     setLoading(true);
     
     try {
-      console.log('=== CRIANDO LOJA ===');
+      console.log('=== INICIANDO CRIAÇÃO DA LOJA ===');
       console.log('Nome da loja:', storeName);
       
-      // Verificar se o usuário está autenticado
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Verificar sessão do usuário de forma mais robusta
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (userError || !user) {
-        console.error('Erro ao obter usuário:', userError);
+      if (sessionError) {
+        console.error('Erro ao obter sessão:', sessionError);
         toast({
-          title: "Erro de autenticação",
-          description: "Usuário não encontrado. Faça login novamente.",
+          title: "Erro de sessão",
+          description: "Problema na sessão do usuário. Faça login novamente.",
           variant: "destructive"
         });
         return false;
       }
 
-      console.log('Usuário autenticado:', user.id);
+      if (!sessionData.session?.user) {
+        console.error('Usuário não autenticado - sem sessão');
+        toast({
+          title: "Erro de autenticação",
+          description: "Usuário não autenticado. Faça login novamente.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-      // Criar a loja primeiro
-      console.log('Inserindo loja na tabela stores...');
+      const user = sessionData.session.user;
+      console.log('Usuário da sessão:', user.id, user.email);
+
+      // Verificar se o usuário já tem uma loja
+      console.log('Verificando se usuário já tem loja...');
+      const { data: existingStore, error: checkError } = await supabase
+        .from('user_stores')
+        .select('store_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Erro ao verificar loja existente:', checkError);
+      }
+
+      if (existingStore) {
+        console.log('Usuário já tem loja:', existingStore.store_id);
+        toast({
+          title: "Loja já existe",
+          description: "Você já possui uma loja cadastrada.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Tentar criar a loja com dados básicos
+      console.log('Criando loja na tabela stores...');
+      console.log('Dados da loja:', {
+        name: storeName.trim(),
+        email: user.email || '',
+        owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário'
+      });
+
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .insert({
@@ -300,10 +340,16 @@ export const useAuth = () => {
         .single();
 
       if (storeError) {
-        console.error('Erro ao criar loja:', storeError);
+        console.error('Erro detalhado ao criar loja:', {
+          code: storeError.code,
+          message: storeError.message,
+          details: storeError.details,
+          hint: storeError.hint
+        });
+        
         toast({
           title: "Erro ao criar loja",
-          description: storeError.message || "Não foi possível criar a loja.",
+          description: `Erro: ${storeError.message}. Entre em contato com o suporte se o problema persistir.`,
           variant: "destructive"
         });
         return false;
@@ -312,7 +358,7 @@ export const useAuth = () => {
       console.log('Loja criada com sucesso:', storeData);
 
       // Associar usuário à loja
-      console.log('Associando usuário à loja...');
+      console.log('Criando associação user_stores...');
       const { error: userStoreError } = await supabase
         .from('user_stores')
         .insert({
@@ -324,7 +370,7 @@ export const useAuth = () => {
       if (userStoreError) {
         console.error('Erro ao associar usuário à loja:', userStoreError);
         
-        // Se falhou ao associar, tentar deletar a loja criada
+        // Rollback: deletar a loja criada
         await supabase.from('stores').delete().eq('id', storeData.id);
         
         toast({
@@ -335,9 +381,9 @@ export const useAuth = () => {
         return false;
       }
 
-      console.log('Usuário associado à loja com sucesso');
+      console.log('Associação criada com sucesso');
 
-      // Atualizar dados do usuário no localStorage
+      // Atualizar localStorage
       const updatedUser = {
         id: user.id,
         email: user.email,
@@ -362,8 +408,8 @@ export const useAuth = () => {
       console.error('Erro geral ao criar loja:', error);
       
       toast({
-        title: "Erro ao criar loja",
-        description: "Erro inesperado. Tente novamente.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente ou entre em contato com o suporte.",
         variant: "destructive"
       });
       return false;
