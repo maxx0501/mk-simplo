@@ -125,6 +125,25 @@ export const useAuth = () => {
     try {
       console.log('Iniciando registro com email:', email);
       
+      // Validações básicas
+      if (!storeName.trim() || !ownerName.trim() || !email.trim() || !password.trim()) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Todos os campos são obrigatórios.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (password.length < 6) {
+        toast({
+          title: "Senha muito curta",
+          description: "A senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       // Verificar se já existe uma conta com este email
       const { data: existingStore } = await supabase
         .from('stores')
@@ -174,98 +193,141 @@ export const useAuth = () => {
 
       console.log('Usuário criado no auth:', authData);
 
-      if (authData.user) {
-        try {
-          // Aguardar um pouco para garantir que o usuário foi criado completamente
-          await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!authData.user) {
+        toast({
+          title: "Erro no cadastro",
+          description: "Falha ao criar usuário. Tente novamente.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-          // Criar registro na tabela stores
-          const { data: storeData, error: storeError } = await supabase
-            .from('stores')
-            .insert({
-              name: storeName,
-              email: email.trim(),
-              owner_name: ownerName,
-              phone: null,
-              cnpj: null,
-              plan_type: 'trial',
-              status: 'active',
-              subscription_status: 'trial',
-              trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-            })
-            .select()
-            .single();
+      try {
+        // Aguardar um tempo maior para garantir que o usuário foi criado completamente
+        console.log('Aguardando processamento do usuário...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-          if (storeError) {
-            console.error('Erro ao criar loja:', storeError);
-            
-            // Tentar fazer logout para não deixar usuário em estado inconsistente
-            await supabase.auth.signOut();
-            
-            toast({
-              title: "Erro ao criar loja",
-              description: "Não foi possível configurar sua loja. Tente novamente ou entre em contato com o suporte.",
-              variant: "destructive"
-            });
-            return false;
-          }
+        // Verificar se o usuário realmente existe antes de prosseguir
+        const { data: userCheck } = await supabase.auth.getUser();
+        console.log('Verificação do usuário:', userCheck);
 
-          console.log('Loja criada com sucesso:', storeData);
+        // Criar registro na tabela stores
+        console.log('Criando loja...');
+        const { data: storeData, error: storeError } = await supabase
+          .from('stores')
+          .insert({
+            name: storeName.trim(),
+            email: email.trim(),
+            owner_name: ownerName.trim(),
+            plan_type: 'trial',
+            status: 'active',
+            subscription_status: 'trial',
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .select()
+          .single();
 
-          // Criar registro na tabela user_stores para associar o usuário à loja
-          const { error: userStoreError } = await supabase
-            .from('user_stores')
-            .insert({
-              user_id: authData.user.id,
-              store_id: storeData.id,
-              role: 'owner'
-            });
-
-          if (userStoreError) {
-            console.error('Erro ao associar usuário à loja:', userStoreError);
-            
-            // Tentar fazer logout para não deixar usuário em estado inconsistente
-            await supabase.auth.signOut();
-            
-            toast({
-              title: "Erro na associação",
-              description: "Problema ao associar usuário à loja. Tente novamente ou entre em contato com o suporte.",
-              variant: "destructive"
-            });
-            return false;
-          }
-
-          console.log('Usuário associado à loja com sucesso');
-
-          // Fazer logout após criar a conta para que o usuário possa fazer login
-          await supabase.auth.signOut();
-
-          toast({
-            title: "Conta criada com sucesso!",
-            description: "Sua loja foi configurada. Faça login para acessar sua conta.",
-          });
+        if (storeError) {
+          console.error('Erro detalhado ao criar loja:', storeError);
           
-          return true;
+          // Fazer logout para não deixar usuário em estado inconsistente
+          await supabase.auth.signOut();
+          
+          let errorMessage = "Não foi possível configurar sua loja.";
+          
+          if (storeError.code === '23505') {
+            errorMessage = "Este email já possui uma loja cadastrada.";
+          } else if (storeError.code === '42501') {
+            errorMessage = "Erro de permissão ao criar loja. Tente novamente.";
+          }
+          
+          toast({
+            title: "Erro ao criar loja",
+            description: errorMessage + " Entre em contato com o suporte se o problema persistir.",
+            variant: "destructive"
+          });
+          return false;
+        }
 
-        } catch (setupError) {
-          console.error('Erro durante configuração da loja:', setupError);
+        console.log('Loja criada com sucesso:', storeData);
+
+        if (!storeData) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Erro na criação",
+            description: "Falha ao obter dados da loja criada. Tente novamente.",
+            variant: "destructive"
+          });
+          return false;
+        }
+
+        // Criar registro na tabela user_stores para associar o usuário à loja
+        console.log('Associando usuário à loja...');
+        const { error: userStoreError } = await supabase
+          .from('user_stores')
+          .insert({
+            user_id: authData.user.id,
+            store_id: storeData.id,
+            role: 'owner'
+          });
+
+        if (userStoreError) {
+          console.error('Erro detalhado ao associar usuário à loja:', userStoreError);
           
           // Tentar fazer logout para não deixar usuário em estado inconsistente
           await supabase.auth.signOut();
           
           toast({
-            title: "Erro na configuração",
-            description: "Problema durante a configuração da loja. Tente novamente.",
+            title: "Erro na associação",
+            description: "Problema ao associar usuário à loja. Entre em contato com o suporte.",
             variant: "destructive"
           });
           return false;
         }
+
+        console.log('Usuário associado à loja com sucesso');
+
+        // Fazer logout após criar a conta para que o usuário possa fazer login
+        await supabase.auth.signOut();
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Sua loja foi configurada. Faça login para acessar sua conta.",
+        });
+        
+        return true;
+
+      } catch (setupError: any) {
+        console.error('Erro durante configuração da loja:', setupError);
+        
+        // Tentar fazer logout para não deixar usuário em estado inconsistente
+        try {
+          await supabase.auth.signOut();
+        } catch (logoutError) {
+          console.error('Erro no logout:', logoutError);
+        }
+        
+        toast({
+          title: "Erro na configuração",
+          description: "Problema durante a configuração da loja. Tente novamente em alguns minutos.",
+          variant: "destructive"
+        });
+        return false;
       }
     } catch (error: any) {
-      console.error('Erro no cadastro:', error);
+      console.error('Erro geral no cadastro:', error);
+      
+      let errorMessage = "Erro inesperado. Tente novamente.";
+      
+      if (error.message?.includes('network')) {
+        errorMessage = "Erro de conexão. Verifique sua internet e tente novamente.";
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+      }
+      
       toast({
         title: "Erro no cadastro",
-        description: error.message || "Erro inesperado. Tente novamente.",
+        description: errorMessage,
         variant: "destructive"
       });
       return false;
