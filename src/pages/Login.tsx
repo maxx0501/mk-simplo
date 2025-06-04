@@ -20,17 +20,17 @@ const Login = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          console.log('Usuário já logado, redirecionando...');
-          navigate('/dashboard');
-        }
+        // Limpar qualquer sessão existente primeiro
+        await supabase.auth.signOut();
+        localStorage.removeItem('mksimplo_user');
+        
+        console.log('Sessão limpa, página de login pronta');
       } catch (error) {
-        console.error('Erro ao verificar sessão:', error);
+        console.error('Erro ao limpar sessão:', error);
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +58,9 @@ const Login = () => {
         return;
       }
 
-      // Fazer logout antes do login para limpar qualquer sessão existente
+      // Fazer logout antes do login para garantir estado limpo
       await supabase.auth.signOut();
+      localStorage.removeItem('mksimplo_user');
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -99,7 +100,7 @@ const Login = () => {
             .maybeSingle();
 
           if (userStoreData && userStoreData.stores) {
-            console.log('Usuário pertence a uma loja');
+            console.log('Usuário pertence a uma loja:', userStoreData.stores.name);
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,

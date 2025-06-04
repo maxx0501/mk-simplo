@@ -16,6 +16,7 @@ import {
   Crown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -32,13 +33,48 @@ export const Sidebar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    localStorage.removeItem('mksimplo_user');
-    toast({
-      title: "Logout realizado",
-      description: "Até logo!"
-    });
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      console.log('Iniciando logout...');
+      
+      // Fazer logout do Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erro no logout do Supabase:', error);
+        throw error;
+      }
+      
+      console.log('Logout do Supabase realizado com sucesso');
+      
+      // Limpar localStorage
+      localStorage.removeItem('mksimplo_user');
+      
+      // Mostrar toast de sucesso
+      toast({
+        title: "Logout realizado",
+        description: "Até logo!"
+      });
+      
+      console.log('Redirecionando para home...');
+      
+      // Redirecionar para home
+      navigate('/');
+      
+    } catch (error: any) {
+      console.error('Erro durante logout:', error);
+      
+      // Mesmo com erro, limpar localStorage e redirecionar
+      localStorage.removeItem('mksimplo_user');
+      
+      toast({
+        title: "Logout realizado",
+        description: "Sessão finalizada",
+        variant: "destructive"
+      });
+      
+      navigate('/');
+    }
   };
 
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
@@ -58,7 +94,7 @@ export const Sidebar = () => {
             Loja
           </p>
           <p className="text-sm font-medium text-sidebar-foreground mt-1">
-            {user.store_name || 'Loja Exemplo'}
+            {user.store_name || 'Loja não definida'}
           </p>
         </div>
 
