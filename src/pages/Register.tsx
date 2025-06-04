@@ -27,9 +27,26 @@ const Register = () => {
     try {
       console.log('Iniciando registro com email:', email);
       
-      // Fazer logout antes de criar nova conta para evitar conflitos
-      await supabase.auth.signOut();
-      localStorage.removeItem('mksimplo_user');
+      // Limpar sessão completamente antes de criar nova conta
+      await supabase.auth.signOut({ scope: 'global' });
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Verificar se já existe uma conta com este email
+      const { data: existingUser } = await supabase
+        .from('stores')
+        .select('email')
+        .eq('email', email.trim())
+        .maybeSingle();
+
+      if (existingUser) {
+        toast({
+          title: "Email já cadastrado",
+          description: "Este email já possui uma conta. Tente fazer login ou use outro email.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -110,28 +127,16 @@ const Register = () => {
           }
         }
 
-        if (!authData.user.email_confirmed_at) {
-          toast({
-            title: "Conta criada com sucesso!",
-            description: "Verifique seu email para confirmar a conta antes de fazer login.",
-          });
-          navigate('/login');
-        } else {
-          console.log('Email já confirmado, configurando sessão');
-          localStorage.setItem('mksimplo_user', JSON.stringify({
-            id: authData.user.id,
-            email: authData.user.email,
-            role: 'owner',
-            store_id: storeData?.id || null,
-            store_name: storeName
-          }));
-          
-          toast({
-            title: "Conta criada com sucesso!",
-            description: "Bem-vindo ao MKsimplo!"
-          });
-          navigate('/dashboard');
-        }
+        // Forçar logout após registro para evitar cache de sessão
+        await supabase.auth.signOut({ scope: 'global' });
+        localStorage.clear();
+        sessionStorage.clear();
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Agora você pode fazer login com suas credenciais.",
+        });
+        navigate('/login');
       } else {
         toast({
           title: "Conta criada com sucesso!",

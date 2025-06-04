@@ -37,18 +37,18 @@ export const Sidebar = () => {
     try {
       console.log('Iniciando logout...');
       
-      // Fazer logout do Supabase
-      const { error } = await supabase.auth.signOut();
+      // Fazer logout completo do Supabase
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
         console.error('Erro no logout do Supabase:', error);
-        throw error;
       }
       
-      console.log('Logout do Supabase realizado com sucesso');
+      console.log('Logout do Supabase realizado');
       
-      // Limpar localStorage
-      localStorage.removeItem('mksimplo_user');
+      // Limpar completamente o armazenamento local
+      localStorage.clear();
+      sessionStorage.clear();
       
       // Mostrar toast de sucesso
       toast({
@@ -58,19 +58,21 @@ export const Sidebar = () => {
       
       console.log('Redirecionando para home...');
       
-      // Redirecionar para home
-      navigate('/');
+      // Aguardar um pouco para garantir que a limpeza foi feita
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
       
     } catch (error: any) {
       console.error('Erro durante logout:', error);
       
       // Mesmo com erro, limpar localStorage e redirecionar
-      localStorage.removeItem('mksimplo_user');
+      localStorage.clear();
+      sessionStorage.clear();
       
       toast({
         title: "Logout realizado",
-        description: "Sessão finalizada",
-        variant: "destructive"
+        description: "Sessão finalizada"
       });
       
       navigate('/');
@@ -94,7 +96,7 @@ export const Sidebar = () => {
             Loja
           </p>
           <p className="text-sm font-medium text-sidebar-foreground mt-1">
-            {user.store_name || 'Loja não definida'}
+            {user.store_name || 'Sem loja definida'}
           </p>
         </div>
 

@@ -17,16 +17,27 @@ const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const clearSession = async () => {
       try {
-        await supabase.auth.signOut();
-        localStorage.removeItem('mksimplo_user');
-        console.log('Sessão limpa, página de login pronta');
+        // Forçar logout completo
+        await supabase.auth.signOut({ scope: 'global' });
+        
+        // Limpar todos os dados locais
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Aguardar um pouco para garantir que a limpeza foi feita
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('Sessão completamente limpa, página de login pronta');
       } catch (error) {
         console.error('Erro ao limpar sessão:', error);
+        // Mesmo com erro, limpar localStorage
+        localStorage.clear();
+        sessionStorage.clear();
       }
     };
-    checkAuth();
+    clearSession();
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -54,8 +65,10 @@ const Login = () => {
         return;
       }
 
-      await supabase.auth.signOut();
-      localStorage.removeItem('mksimplo_user');
+      // Garantir logout antes de tentar novo login
+      await supabase.auth.signOut({ scope: 'global' });
+      localStorage.clear();
+      sessionStorage.clear();
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
