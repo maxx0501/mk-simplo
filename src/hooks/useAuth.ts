@@ -81,70 +81,22 @@ export const useAuth = () => {
               store_id: userStoreData.store_id,
               store_name: userStoreData.stores.name
             }));
+            navigate('/dashboard');
           } else {
-            console.log('Usuário não tem loja associada, criando loja automaticamente...');
+            console.log('Usuário não tem loja associada, redirecionando para criação...');
             
-            // Criar a loja com dados padrão baseados no email
-            const emailPrefix = data.user.email?.split('@')[0] || 'usuario';
-            const storeName = `Loja ${emailPrefix}`;
-            const ownerName = data.user.user_metadata?.full_name || emailPrefix;
-            
-            const { data: storeData, error: storeError } = await supabase
-              .from('stores')
-              .insert({
-                name: storeName,
-                email: data.user.email,
-                owner_name: ownerName,
-                plan_type: 'free',
-                status: 'active',
-                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              })
-              .select()
-              .single();
-
-            if (storeError) {
-              console.error('Erro ao criar loja:', storeError);
-              toast({
-                title: "Erro ao configurar loja",
-                description: "Houve um problema ao configurar sua loja. Tente novamente.",
-                variant: "destructive"
-              });
-              return;
-            }
-
-            console.log('Loja criada com sucesso:', storeData);
-
-            // Associar usuário à loja
-            const { error: userStoreError } = await supabase
-              .from('user_stores')
-              .insert({
-                user_id: data.user.id,
-                store_id: storeData.id,
-                role: 'owner'
-              });
-
-            if (userStoreError) {
-              console.error('Erro ao associar usuário à loja:', userStoreError);
-              toast({
-                title: "Erro ao configurar loja",
-                description: "Houve um problema ao associar você à loja. Tente novamente.",
-                variant: "destructive"
-              });
-              return;
-            }
-
-            console.log('Usuário associado à loja com sucesso');
-
+            // Salvar dados do usuário sem loja
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,
               role: 'owner',
-              store_id: storeData.id,
-              store_name: storeData.name
+              store_id: null,
+              store_name: null
             }));
+            
+            // Redirecionar para página de criação de loja
+            navigate('/create-store');
           }
-          
-          navigate('/dashboard');
         }
 
         toast({
@@ -173,17 +125,16 @@ export const useAuth = () => {
     }
   };
 
-  const handleRegister = async (storeName: string, ownerName: string, email: string, password: string) => {
+  const handleRegister = async (ownerName: string, email: string, password: string) => {
     setLoading(true);
     
     try {
       console.log('=== INICIANDO CADASTRO ===');
       console.log('Email:', email);
-      console.log('Nome da loja:', storeName);
       console.log('Nome do proprietário:', ownerName);
       
       // Validações básicas
-      if (!storeName.trim() || !ownerName.trim() || !email.trim() || !password.trim()) {
+      if (!ownerName.trim() || !email.trim() || !password.trim()) {
         toast({
           title: "Campos obrigatórios",
           description: "Todos os campos são obrigatórios.",
@@ -208,8 +159,7 @@ export const useAuth = () => {
         password: password,
         options: {
           data: {
-            full_name: ownerName,
-            store_name: storeName
+            full_name: ownerName
           }
         }
       });
@@ -273,5 +223,101 @@ export const useAuth = () => {
     }
   };
 
-  return { handleLogin, handleRegister, loading };
+  const createStore = async (storeName: string, phone?: string, cnpj?: string) => {
+    setLoading(true);
+    
+    try {
+      console.log('Criando loja:', storeName);
+      
+      const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+      
+      if (!user.id) {
+        toast({
+          title: "Erro",
+          description: "Usuário não encontrado. Faça login novamente.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Criar a loja
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .insert({
+          name: storeName,
+          email: user.email,
+          phone: phone || null,
+          cnpj: cnpj || null,
+          owner_name: user.email?.split('@')[0] || 'Proprietário',
+          plan_type: 'free',
+          status: 'active',
+          trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .select()
+        .single();
+
+      if (storeError) {
+        console.error('Erro ao criar loja:', storeError);
+        toast({
+          title: "Erro ao criar loja",
+          description: storeError.message || "Não foi possível criar a loja.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('Loja criada com sucesso:', storeData);
+
+      // Associar usuário à loja
+      const { error: userStoreError } = await supabase
+        .from('user_stores')
+        .insert({
+          user_id: user.id,
+          store_id: storeData.id,
+          role: 'owner'
+        });
+
+      if (userStoreError) {
+        console.error('Erro ao associar usuário à loja:', userStoreError);
+        toast({
+          title: "Erro ao associar loja",
+          description: "Loja criada mas não foi possível associá-la ao usuário.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('Usuário associado à loja com sucesso');
+
+      // Atualizar dados do usuário no localStorage
+      const updatedUser = {
+        ...user,
+        store_id: storeData.id,
+        store_name: storeData.name
+      };
+      
+      localStorage.setItem('mksimplo_user', JSON.stringify(updatedUser));
+
+      toast({
+        title: "Loja criada com sucesso!",
+        description: `${storeName} foi criada e você já pode começar a usar o sistema.`
+      });
+
+      return true;
+
+    } catch (error: any) {
+      console.error('Erro geral ao criar loja:', error);
+      
+      toast({
+        title: "Erro ao criar loja",
+        description: "Erro inesperado. Tente novamente.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { handleLogin, handleRegister, createStore, loading };
 };

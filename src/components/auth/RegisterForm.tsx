@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const RegisterForm = () => {
-  const [storeName, setStoreName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,11 +16,10 @@ export const RegisterForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const success = await handleRegister(storeName, ownerName, email, password);
+    const success = await handleRegister(ownerName, email, password);
     
     if (success) {
       // Limpar formulário
-      setStoreName('');
       setOwnerName('');
       setEmail('');
       setPassword('');
@@ -35,18 +33,6 @@ export const RegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="storeName">Nome da Loja *</Label>
-        <Input
-          id="storeName"
-          placeholder="Ex: Loja da Maria"
-          value={storeName}
-          onChange={(e) => setStoreName(e.target.value)}
-          required
-          disabled={loading}
-        />
-      </div>
-      
       <div className="space-y-2">
         <Label htmlFor="ownerName">Seu Nome *</Label>
         <Input
