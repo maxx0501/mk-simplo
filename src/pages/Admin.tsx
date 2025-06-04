@@ -1,10 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { 
   Store, 
   Users, 
@@ -19,7 +21,8 @@ import {
   Crown,
   Clock,
   CreditCard,
-  UserCheck
+  UserCheck,
+  LogOut
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -126,6 +129,7 @@ const sampleStores: Store[] = [
 ];
 
 const Admin = () => {
+  const navigate = useNavigate();
   const [stores, setStores] = useState<Store[]>(sampleStores);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(false);
@@ -133,6 +137,15 @@ const Admin = () => {
   const [selectedPlan, setSelectedPlan] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedSubscriptionStatus, setSelectedSubscriptionStatus] = useState('all');
+  const [isNewStoreDialogOpen, setIsNewStoreDialogOpen] = useState(false);
+  const [newStore, setNewStore] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    cnpj: '',
+    owner_name: '',
+    plan_type: 'trial'
+  });
   const { toast } = useToast();
 
   const filteredStores = stores.filter(store => {
@@ -266,6 +279,47 @@ const Admin = () => {
       }, 0)
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('mksimplo_admin');
+    toast({
+      title: "Logout realizado",
+      description: "Saindo do painel administrativo"
+    });
+    navigate('/');
+  };
+
+  const handleCreateStore = () => {
+    // Adicionar nova loja aos dados
+    const newStoreData: Store = {
+      id: (stores.length + 1).toString(),
+      ...newStore,
+      status: 'active',
+      subscription_status: 'trial',
+      trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias a partir de agora
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    setStores([...stores, newStoreData]);
+    
+    // Limpar formulário
+    setNewStore({
+      name: '',
+      email: '',
+      phone: '',
+      cnpj: '',
+      owner_name: '',
+      plan_type: 'trial'
+    });
+    
+    setIsNewStoreDialogOpen(false);
+    
+    toast({
+      title: "Loja criada com sucesso",
+      description: `${newStoreData.name} foi adicionada ao sistema`
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -279,9 +333,19 @@ const Admin = () => {
                 <p className="text-gray-600">Painel de controle da plataforma</p>
               </div>
             </div>
-            <Badge variant="outline" className="text-purple-600 border-purple-600">
-              Super Admin
-            </Badge>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="text-purple-600 border-purple-600">
+                Super Admin
+              </Badge>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="text-red-600 border-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -413,10 +477,108 @@ const Admin = () => {
                 </SelectContent>
               </Select>
 
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Loja
-              </Button>
+              <Dialog open={isNewStoreDialogOpen} onOpenChange={setIsNewStoreDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Loja
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Criar Nova Loja</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="store-name" className="text-right">
+                        Nome
+                      </Label>
+                      <Input
+                        id="store-name"
+                        value={newStore.name}
+                        onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
+                        className="col-span-3"
+                        placeholder="Nome da loja"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="store-email" className="text-right">
+                        Email
+                      </Label>
+                      <Input
+                        id="store-email"
+                        type="email"
+                        value={newStore.email}
+                        onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                        className="col-span-3"
+                        placeholder="email@exemplo.com"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="owner-name" className="text-right">
+                        Proprietário
+                      </Label>
+                      <Input
+                        id="owner-name"
+                        value={newStore.owner_name}
+                        onChange={(e) => setNewStore({ ...newStore, owner_name: e.target.value })}
+                        className="col-span-3"
+                        placeholder="Nome do proprietário"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="store-phone" className="text-right">
+                        Telefone
+                      </Label>
+                      <Input
+                        id="store-phone"
+                        value={newStore.phone}
+                        onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
+                        className="col-span-3"
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="store-cnpj" className="text-right">
+                        CNPJ
+                      </Label>
+                      <Input
+                        id="store-cnpj"
+                        value={newStore.cnpj}
+                        onChange={(e) => setNewStore({ ...newStore, cnpj: e.target.value })}
+                        className="col-span-3"
+                        placeholder="00.000.000/0001-00"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="store-plan" className="text-right">
+                        Plano
+                      </Label>
+                      <Select value={newStore.plan_type} onValueChange={(value) => setNewStore({ ...newStore, plan_type: value })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Selecionar plano" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="trial">Período de Teste</SelectItem>
+                          <SelectItem value="basic">Básico</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setIsNewStoreDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleCreateStore}
+                      disabled={!newStore.name || !newStore.email || !newStore.owner_name}
+                    >
+                      Criar Loja
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
