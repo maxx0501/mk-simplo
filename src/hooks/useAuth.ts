@@ -42,6 +42,18 @@ export const useAuth = () => {
 
       if (error) {
         console.error('Erro no login:', error);
+        
+        // Tratamento específico para email não confirmado
+        if (error.message === "Email not confirmed") {
+          toast({
+            title: "Email não confirmado",
+            description: "Verifique sua caixa de entrada ou clique em 'Reenviar confirmação' se não recebeu o email.",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        
         throw error;
       }
 
@@ -112,7 +124,7 @@ export const useAuth = () => {
       if (error.message === "Invalid login credentials") {
         errorMessage = "Email ou senha incorretos. Verifique suas credenciais.";
       } else if (error.message === "Email not confirmed") {
-        errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
+        errorMessage = "Email não confirmado. Clique em 'Reenviar confirmação' abaixo.";
       }
       
       toast({
@@ -160,7 +172,8 @@ export const useAuth = () => {
         options: {
           data: {
             full_name: ownerName
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
 
@@ -194,18 +207,11 @@ export const useAuth = () => {
         return false;
       }
 
-      // Se o usuário foi criado e já está confirmado (desenvolvimento local)
-      if (authData.user && !authData.user.email_confirmed_at) {
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Verifique seu email para confirmar a conta antes de fazer login.",
-        });
-      } else {
-        toast({
-          title: "Conta criada e confirmada!",
-          description: "Você já pode fazer login com suas credenciais.",
-        });
-      }
+      // Mensagem de sucesso
+      toast({
+        title: "Conta criada com sucesso!",
+        description: "Verifique seu email para confirmar a conta. Se não receber, verifique a pasta de spam.",
+      });
       
       return true;
 
@@ -218,6 +224,38 @@ export const useAuth = () => {
         variant: "destructive"
       });
       return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendConfirmation = async (email: string) => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Email reenviado!",
+        description: "Verifique sua caixa de entrada. O email pode levar alguns minutos para chegar.",
+      });
+    } catch (error: any) {
+      console.error('Erro ao reenviar confirmação:', error);
+      toast({
+        title: "Erro ao reenviar email",
+        description: error.message || "Tente novamente em alguns minutos.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -319,5 +357,5 @@ export const useAuth = () => {
     }
   };
 
-  return { handleLogin, handleRegister, createStore, loading };
+  return { handleLogin, handleRegister, resendConfirmation, createStore, loading };
 };
