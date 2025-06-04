@@ -209,6 +209,10 @@ export type Database = {
         Args: { store_id: string }
         Returns: boolean
       }
+      is_superadmin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

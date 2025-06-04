@@ -57,32 +57,26 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     // Não bloquear a criação da loja por isso
   }
 
-  // Criar a loja com dados básicos - SEMPRE começar com dados limpos
+  // Criar a loja com dados obrigatórios corretamente preenchidos
   console.log('Criando loja na tabela stores...');
-  console.log('Dados da loja:', {
+  const storeData = {
     name: storeName.trim(),
     email: user.email || '',
+    phone: phone || null,
+    cnpj: cnpj || null,
     owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
-    user_id: user.id,
-    plan_type: 'free',
-    subscription_status: 'trial',
-    status: 'active'
-  });
+    plan_type: 'free', // Garantir que seja preenchido
+    status: 'active', // Garantir que seja preenchido
+    subscription_status: 'trial', // Garantir que seja preenchido
+    trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    user_id: user.id
+  };
 
-  const { data: storeData, error: storeError } = await supabase
+  console.log('Dados da loja a serem inseridos:', storeData);
+
+  const { data: newStoreData, error: storeError } = await supabase
     .from('stores')
-    .insert({
-      name: storeName.trim(),
-      email: user.email || '',
-      phone: phone || null,
-      cnpj: cnpj || null,
-      owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
-      plan_type: 'free',
-      status: 'active',
-      subscription_status: 'trial',
-      trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      user_id: user.id
-    })
+    .insert(storeData)
     .select()
     .single();
 
@@ -97,7 +91,7 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     throw new Error(`Erro: ${storeError.message}. Entre em contato com o suporte se o problema persistir.`);
   }
 
-  console.log('Loja criada com sucesso:', storeData);
+  console.log('Loja criada com sucesso:', newStoreData);
 
   // Associar usuário à loja
   console.log('Criando associação user_stores...');
@@ -105,7 +99,7 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     .from('user_stores')
     .insert({
       user_id: user.id,
-      store_id: storeData.id,
+      store_id: newStoreData.id,
       role: 'owner'
     });
 
@@ -113,29 +107,29 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     console.error('Erro ao associar usuário à loja:', userStoreError);
     
     // Rollback: deletar a loja criada
-    await supabase.from('stores').delete().eq('id', storeData.id);
+    await supabase.from('stores').delete().eq('id', newStoreData.id);
     
     throw new Error('Não foi possível associar a loja ao usuário.');
   }
 
   console.log('Associação criada com sucesso');
-  console.log('🧼 Nova loja criada SEM dados pré-populados - sistema totalmente limpo');
+  console.log('✅ Nova loja criada com campos obrigatórios preenchidos corretamente');
 
   // Retornar dados da loja criada
   return {
     success: true,
     storeData: {
-      id: storeData.id,
-      name: storeData.name,
-      email: storeData.email,
-      owner_name: storeData.owner_name
+      id: newStoreData.id,
+      name: newStoreData.name,
+      email: newStoreData.email,
+      owner_name: newStoreData.owner_name
     },
     userData: {
       id: user.id,
       email: user.email,
       role: 'owner',
-      store_id: storeData.id,
-      store_name: storeData.name
+      store_id: newStoreData.id,
+      store_name: newStoreData.name
     }
   };
 };

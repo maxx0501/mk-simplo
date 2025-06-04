@@ -42,6 +42,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userValidated, setUserValidated] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -66,12 +67,35 @@ const Admin = () => {
         // Verificar se é admin demo
         if (user.isDemo && user.email === 'admin@mksimplo.com') {
           console.log('✅ Acesso de admin demo autorizado');
+          setUserValidated(true);
           return;
         }
 
         // Para usuários reais, verificar se tem role superadmin
         if (user.role === 'superadmin') {
           console.log('✅ Acesso de superadmin autorizado para:', user.email);
+          setUserValidated(true);
+          return;
+        }
+
+        // Verificar no banco se é superadmin (para casos onde o localStorage não tem a role atualizada)
+        console.log('🔍 Verificando role no banco de dados...');
+        const { data: adminData, error } = await supabase
+          .from('platform_admins')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('❌ Erro ao verificar admin no banco:', error);
+        }
+
+        if (adminData) {
+          console.log('✅ Usuário encontrado como admin no banco');
+          // Atualizar localStorage com role correta
+          const updatedUser = { ...user, role: 'superadmin' };
+          localStorage.setItem('mksimplo_user', JSON.stringify(updatedUser));
+          setUserValidated(true);
           return;
         }
 
@@ -98,24 +122,17 @@ const Admin = () => {
     checkAdminAccess();
   }, [navigate, toast]);
 
-  // Carregar TODAS as lojas do banco de dados
+  // Carregar TODAS as lojas do banco de dados - só executa após validação do usuário
   useEffect(() => {
+    if (!userValidated) {
+      console.log('⏳ Aguardando validação do usuário antes de carregar lojas...');
+      return;
+    }
+
     const loadAllStores = async () => {
       try {
         console.log('🔍 Carregando TODAS as lojas para o painel admin...');
         
-        const userData = localStorage.getItem('mksimplo_user');
-        if (!userData) {
-          return;
-        }
-
-        const user = JSON.parse(userData);
-        
-        // Para admin demo, simular dados ou tentar acessar dados reais
-        if (user.isDemo) {
-          console.log('Admin demo - tentando carregar lojas usando privilégios especiais...');
-        }
-
         // Tentar carregar todas as lojas (superadmins devem conseguir via RLS)
         const { data, error } = await supabase
           .from('stores')
@@ -131,6 +148,7 @@ const Admin = () => {
           });
         } else {
           console.log('✅ Lojas carregadas para admin:', data?.length || 0, 'lojas encontradas');
+          console.log('📊 Dados das lojas:', data);
           setStores(data || []);
         }
       } catch (error: any) {
@@ -146,7 +164,7 @@ const Admin = () => {
     };
 
     loadAllStores();
-  }, [toast]);
+  }, [userValidated, toast]);
 
   const filteredStores = stores.filter(store => {
     const matchesSearch = store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -319,12 +337,14 @@ const Admin = () => {
     navigate('/');
   };
 
-  if (loading) {
+  if (loading || !userValidated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Carregando painel administrativo...</p>
+          <p className="mt-4 text-gray-600">
+            {!userValidated ? 'Validando permissões de admin...' : 'Carregando painel administrativo...'}
+          </p>
         </div>
       </div>
     );
