@@ -1,13 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, Store } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Users, Plus } from 'lucide-react';
+import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 
 export default function UsersPage() {
-  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -15,34 +14,11 @@ export default function UsersPage() {
     setUser(userData);
   }, []);
 
-  // Se o usuário não tem loja, mostrar tela de criação
+  // Se o usuário não tem loja, mostrar opções de acesso
   if (!user?.store_id) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <Store className="h-12 w-12 text-blue-600" />
-              </div>
-              <CardTitle className="text-2xl">Bem-vindo ao MKsimplo!</CardTitle>
-              <CardDescription>
-                Você ainda não tem uma loja cadastrada. Crie sua primeira loja para começar a usar o sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button 
-                onClick={() => navigate('/settings')}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                Criar Minha Primeira Loja
-              </Button>
-              <p className="text-sm text-gray-500 mt-3">
-                Você pode criar sua loja nas configurações do sistema
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <StoreAccessOptions />
       </DashboardLayout>
     );
   }

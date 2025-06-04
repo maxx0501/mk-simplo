@@ -57,8 +57,50 @@ export type Database = {
         }
         Relationships: []
       }
+      store_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          store_id: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          store_id: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          store_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_invites_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
+          access_code: string | null
           cnpj: string | null
           created_at: string
           email: string
@@ -75,6 +117,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_code?: string | null
           cnpj?: string | null
           created_at?: string
           email: string
@@ -91,6 +134,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_code?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string
@@ -201,6 +245,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_store_access_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_platform_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
