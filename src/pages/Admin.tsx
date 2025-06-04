@@ -110,67 +110,93 @@ const Admin = () => {
       try {
         console.log('🔍 Carregando lojas da tabela stores...');
         
-        // Primeiro, vamos verificar se há RLS habilitado
-        console.log('🔒 Verificando se há RLS na tabela stores...');
+        // Verificar se é admin demo primeiro
+        const userData = localStorage.getItem('mksimplo_user');
+        const user = userData ? JSON.parse(userData) : null;
         
-        // Tentar buscar com o cliente anônimo primeiro
-        const { data: sessionData } = await supabase.auth.getSession();
-        console.log('👤 Sessão atual:', sessionData?.session?.user?.email || 'Nenhuma sessão');
-        
-        // Buscar todas as lojas diretamente da tabela stores
+        if (user?.isDemo && user?.email === 'admin@mksimplo.com') {
+          console.log('📝 Criando dados de exemplo para admin demo...');
+          const exampleStores = [
+            {
+              id: '1',
+              name: 'Tech Store Premium',
+              owner_name: 'João Silva Santos',
+              plan_type: 'pro',
+              created_at: '2024-01-15T10:30:00Z',
+              status: 'active'
+            },
+            {
+              id: '2', 
+              name: 'Loja da Maria',
+              owner_name: 'Maria Santos Oliveira',
+              plan_type: 'basic',
+              created_at: '2024-02-20T14:45:00Z',
+              status: 'active'
+            },
+            {
+              id: '3',
+              name: 'SuperMercado Central',
+              owner_name: 'Carlos Roberto Lima',
+              plan_type: 'premium',
+              created_at: '2024-03-10T09:15:00Z',
+              status: 'active'
+            },
+            {
+              id: '4',
+              name: 'Boutique Elegance',
+              owner_name: 'Ana Paula Costa',
+              plan_type: 'free',
+              created_at: '2024-03-25T16:20:00Z',
+              status: 'active'
+            },
+            {
+              id: '5',
+              name: 'Farmácia São João',
+              owner_name: 'Pedro Henrique Souza',
+              plan_type: 'trial',
+              created_at: '2024-04-05T11:30:00Z',
+              status: 'active'
+            }
+          ];
+          
+          console.log('✅ Dados de exemplo criados:', exampleStores.length, 'lojas');
+          setStores(exampleStores);
+          setLoading(false);
+          return;
+        }
+
+        // Para usuários reais, buscar do banco
         const { data, error } = await supabase
           .from('stores')
           .select('*')
           .order('created_at', { ascending: false });
 
-        console.log('📊 Dados retornados:', data);
+        console.log('📊 Dados retornados do banco:', data);
         console.log('❌ Erro (se houver):', error);
-
-        // Se erro de RLS, tentar com diferentes abordagens
-        if (error && error.code === 'PGRST116') {
-          console.log('🚫 Erro de RLS detectado, tentando como admin...');
-          
-          // Se for admin demo, vamos criar dados de exemplo
-          if (localStorage.getItem('mksimplo_user')?.includes('admin@mksimplo.com')) {
-            console.log('📝 Criando dados de exemplo para admin demo...');
-            const exampleStores = [
-              {
-                id: '1',
-                name: 'Loja Exemplo 1',
-                owner_name: 'João Silva',
-                plan_type: 'free',
-                created_at: new Date().toISOString(),
-                status: 'active'
-              },
-              {
-                id: '2', 
-                name: 'Loja Exemplo 2',
-                owner_name: 'Maria Santos',
-                plan_type: 'pro',
-                created_at: new Date().toISOString(),
-                status: 'active'
-              }
-            ];
-            setStores(exampleStores);
-            setLoading(false);
-            return;
-          }
-        }
 
         if (error) {
           console.error('❌ Erro ao carregar lojas:', error);
-          console.error('❌ Código do erro:', error.code);
-          console.error('❌ Mensagem do erro:', error.message);
-          console.error('❌ Detalhes do erro:', error.details);
-          
           toast({
             title: "Erro ao carregar lojas",
-            description: `${error.message} (Código: ${error.code})`,
+            description: `${error.message} (Código: ${error.code || 'N/A'})`,
             variant: "destructive"
           });
+          
+          // Fallback para dados de exemplo em caso de erro
+          console.log('🔄 Usando dados de exemplo como fallback...');
+          const fallbackStores = [
+            {
+              id: 'fallback-1',
+              name: 'Loja Exemplo (Fallback)',
+              owner_name: 'Administrador',
+              plan_type: 'free',
+              created_at: new Date().toISOString(),
+              status: 'active'
+            }
+          ];
+          setStores(fallbackStores);
         } else {
-          console.log('✅ Lojas carregadas:', data?.length || 0);
-          console.log('📝 Dados das lojas:', data);
+          console.log('✅ Lojas carregadas do banco:', data?.length || 0);
           setStores(data || []);
         }
       } catch (error: any) {
@@ -214,7 +240,9 @@ const Admin = () => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -232,7 +260,7 @@ const Admin = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">
             {!userValidated ? 'Validando permissões...' : 'Carregando lojas...'}
           </p>
@@ -334,6 +362,7 @@ const Admin = () => {
                     <TableHead>Proprietário</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>Data de Criação</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -347,6 +376,14 @@ const Admin = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{formatDate(store.created_at)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={store.status === 'active' ? 'default' : 'secondary'}
+                          className={store.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {store.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
