@@ -64,15 +64,52 @@ const Admin = () => {
         const user = sessionData.session.user;
         console.log('🔍 Verificando permissões de admin para:', user.email);
 
-        // Verificar se é superadmin na tabela profiles
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_superadmin')
-          .eq('id', user.id)
-          .maybeSingle();
+        // Verificar se é admin demo primeiro
+        if (user.email === 'admin@mksimplo.com') {
+          console.log('✅ Acesso de admin demo autorizado');
+          return;
+        }
 
-        if (profileError) {
-          console.error('❌ Erro ao verificar perfil:', profileError);
+        // Para usuários reais, verificar na tabela profiles usando SQL direto
+        try {
+          const { data: profileData, error: profileError } = await supabase.rpc('check_superadmin_status', {
+            user_id: user.id
+          });
+
+          if (profileError) {
+            console.log('⚠️ Função check_superadmin_status não encontrada, usando fallback');
+            
+            // Fallback: verificar na tabela platform_admins (compatibilidade)
+            const { data: adminData } = await supabase
+              .from('platform_admins')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (!adminData) {
+              console.log('❌ Acesso negado: usuário não é superadmin');
+              toast({
+                title: "Acesso negado",
+                description: "Você não tem permissão para acessar o painel administrativo",
+                variant: "destructive"
+              });
+              navigate('/dashboard');
+              return;
+            }
+          } else if (!profileData) {
+            console.log('❌ Acesso negado: usuário não é superadmin');
+            toast({
+              title: "Acesso negado",
+              description: "Você não tem permissão para acessar o painel administrativo",
+              variant: "destructive"
+            });
+            navigate('/dashboard');
+            return;
+          }
+
+          console.log('✅ Acesso de superadmin autorizado para:', user.email);
+        } catch (profileCheckError) {
+          console.error('❌ Erro ao verificar perfil:', profileCheckError);
           toast({
             title: "Erro ao verificar permissões",
             description: "Não foi possível verificar suas permissões de administrador",
@@ -81,19 +118,6 @@ const Admin = () => {
           navigate('/dashboard');
           return;
         }
-
-        if (!profileData?.is_superadmin) {
-          console.log('❌ Acesso negado: usuário não é superadmin');
-          toast({
-            title: "Acesso negado",
-            description: "Você não tem permissão para acessar o painel administrativo",
-            variant: "destructive"
-          });
-          navigate('/dashboard');
-          return;
-        }
-
-        console.log('✅ Acesso de superadmin autorizado para:', user.email);
       } catch (error: any) {
         console.error('❌ Erro inesperado ao verificar permissões:', error);
         toast({

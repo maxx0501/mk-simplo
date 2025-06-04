@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const loginUser = async (email: string, password: string) => {
@@ -36,25 +35,49 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error('Usuário não encontrado');
   }
 
-  // Verificar se é admin da plataforma
-  const { data: adminData } = await supabase
-    .from('platform_admins')
-    .select('*')
-    .eq('user_id', data.user.id)
-    .maybeSingle();
+  // Verificar se é admin da plataforma usando fallback
+  try {
+    // Tentar verificar se é superadmin usando RPC function
+    const { data: superadminCheck } = await supabase.rpc('check_superadmin_status', {
+      user_id: data.user.id
+    });
 
-  if (adminData) {
-    console.log('Usuário é admin da plataforma');
-    return {
-      success: true,
-      userData: {
-        id: data.user.id,
-        email: data.user.email,
-        role: 'superadmin',
-        store_id: null
-      },
-      redirectTo: '/admin'
-    };
+    if (superadminCheck) {
+      console.log('Usuário é superadmin da plataforma');
+      return {
+        success: true,
+        userData: {
+          id: data.user.id,
+          email: data.user.email,
+          role: 'superadmin',
+          store_id: null
+        },
+        redirectTo: '/admin'
+      };
+    }
+  } catch (rpcError) {
+    console.log('⚠️ Função check_superadmin_status não encontrada, usando fallback');
+    
+    // Fallback: verificar na tabela platform_admins
+    const { data: adminData } = await supabase
+      .from('platform_admins')
+      .select('*')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+
+    if (adminData) {
+      console.log('Usuário é admin da plataforma (via platform_admins)');
+      return {
+        success: true,
+        userData: {
+          id: data.user.id,
+          email: data.user.email,
+          role: 'superadmin',
+          store_id: null
+        },
+        redirectTo: '/admin'
+      };
+    }
   }
 
   // Buscar dados da loja do usuário
