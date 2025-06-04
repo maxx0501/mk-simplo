@@ -45,19 +45,19 @@ export const Sidebar = () => {
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow pt-5 overflow-y-auto bg-white border-r">
+      <div className="flex flex-col flex-grow pt-5 overflow-y-auto bg-sidebar border-r border-sidebar-border">
         {/* Logo */}
         <div className="flex items-center flex-shrink-0 px-4">
-          <Store className="h-8 w-8 text-blue-600" />
-          <span className="ml-2 text-xl font-bold text-gray-900">MKsimplo</span>
+          <Store className="h-8 w-8 text-blue-400" />
+          <span className="ml-2 text-xl font-bold text-sidebar-foreground">MKsimplo</span>
         </div>
 
         {/* Store Name */}
         <div className="mt-5 px-4">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <p className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider">
             Loja Atual
           </p>
-          <p className="text-sm font-medium text-gray-900 mt-1">
+          <p className="text-sm font-medium text-sidebar-foreground mt-1">
             {user.store_name || 'Loja Exemplo'}
           </p>
         </div>
@@ -71,9 +71,9 @@ export const Sidebar = () => {
               className={({ isActive }) =>
                 cn(
                   isActive
-                    ? 'bg-blue-100 text-blue-900'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                  'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors'
                 )
               }
             >
@@ -87,14 +87,14 @@ export const Sidebar = () => {
         </nav>
 
         {/* User info and logout */}
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+        <div className="flex-shrink-0 flex border-t border-sidebar-border p-4">
           <div className="flex-shrink-0 w-full group block">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-sidebar-foreground">
                   {user.email}
                 </p>
-                <p className="text-xs font-medium text-gray-500">
+                <p className="text-xs font-medium text-sidebar-foreground/70">
                   {user.role === 'owner' ? 'Proprietário' : 'Vendedor'}
                 </p>
               </div>
@@ -102,7 +102,7 @@ export const Sidebar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
