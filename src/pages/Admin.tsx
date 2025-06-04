@@ -27,6 +27,7 @@ interface Store {
   owner_name: string;
   plan_type: string;
   created_at: string;
+  status: string;
 }
 
 const Admin = () => {
@@ -107,12 +108,16 @@ const Admin = () => {
 
     const loadStores = async () => {
       try {
-        console.log('🔍 Carregando lojas...');
+        console.log('🔍 Carregando lojas da tabela stores...');
         
+        // Buscar todas as lojas diretamente da tabela stores
         const { data, error } = await supabase
           .from('stores')
-          .select('id, name, owner_name, plan_type, created_at')
+          .select('*')
           .order('created_at', { ascending: false });
+
+        console.log('📊 Dados retornados:', data);
+        console.log('❌ Erro (se houver):', error);
 
         if (error) {
           console.error('❌ Erro ao carregar lojas:', error);
@@ -123,6 +128,7 @@ const Admin = () => {
           });
         } else {
           console.log('✅ Lojas carregadas:', data?.length || 0);
+          console.log('📝 Dados das lojas:', data);
           setStores(data || []);
         }
       } catch (error: any) {
@@ -145,7 +151,8 @@ const Admin = () => {
       trial: 'Período de Teste',
       free: 'Gratuito',
       basic: 'Básico',
-      premium: 'Premium'
+      premium: 'Premium',
+      pro: 'Pro'
     };
     return labels[plan as keyof typeof labels] || plan;
   };
@@ -155,7 +162,8 @@ const Admin = () => {
       trial: 'bg-yellow-100 text-yellow-800',
       free: 'bg-gray-100 text-gray-800',
       basic: 'bg-blue-100 text-blue-800',
-      premium: 'bg-purple-100 text-purple-800'
+      premium: 'bg-purple-100 text-purple-800',
+      pro: 'bg-green-100 text-green-800'
     };
     return colors[plan as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -190,6 +198,9 @@ const Admin = () => {
       </div>
     );
   }
+
+  const paidPlans = stores.filter(s => s.plan_type !== 'free' && s.plan_type !== 'trial');
+  const freePlans = stores.filter(s => s.plan_type === 'free' || s.plan_type === 'trial');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,9 +252,7 @@ const Admin = () => {
               <div className="flex items-center">
                 <Store className="h-6 w-6 text-green-600" />
                 <div className="ml-3">
-                  <div className="text-2xl font-bold text-green-600">
-                    {stores.filter(s => s.plan_type !== 'free' && s.plan_type !== 'trial').length}
-                  </div>
+                  <div className="text-2xl font-bold text-green-600">{paidPlans.length}</div>
                   <div className="text-sm text-gray-600">Planos Pagos</div>
                 </div>
               </div>
@@ -255,9 +264,7 @@ const Admin = () => {
               <div className="flex items-center">
                 <Building className="h-6 w-6 text-yellow-600" />
                 <div className="ml-3">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {stores.filter(s => s.plan_type === 'free' || s.plan_type === 'trial').length}
-                  </div>
+                  <div className="text-2xl font-bold text-yellow-600">{freePlans.length}</div>
                   <div className="text-sm text-gray-600">Planos Gratuitos</div>
                 </div>
               </div>
@@ -268,9 +275,7 @@ const Admin = () => {
         {/* Lista de Lojas */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              Lojas Cadastradas ({stores.length})
-            </CardTitle>
+            <CardTitle>Lojas Cadastradas ({stores.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {stores.length === 0 ? (
