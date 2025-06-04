@@ -12,7 +12,8 @@ import {
   Users, 
   Settings,
   LogOut,
-  ArrowUp
+  ArrowUp,
+  Crown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +24,7 @@ const navigationItems = [
   { name: 'Estoque', href: '/inventory', icon: ArrowUp },
   { name: 'Relatórios', href: '/reports', icon: TrendingUp },
   { name: 'Usuários', href: '/users', icon: Users },
+  { name: 'Assinatura', href: '/subscription', icon: Crown },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ];
 

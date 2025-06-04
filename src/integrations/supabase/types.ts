@@ -41,6 +41,9 @@ export type Database = {
           phone: string | null
           plan_type: string
           status: string
+          subscription_id: string | null
+          subscription_status: string | null
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -53,6 +56,9 @@ export type Database = {
           phone?: string | null
           plan_type?: string
           status?: string
+          subscription_id?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -65,7 +71,66 @@ export type Database = {
           phone?: string | null
           plan_type?: string
           status?: string
+          subscription_id?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          plan_type: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_end: string | null
+          subscription_start: string | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          subscription_start?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          subscription_start?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -108,6 +173,10 @@ export type Database = {
     Functions: {
       is_platform_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_store_subscription_active: {
+        Args: { store_id: string }
         Returns: boolean
       }
     }
