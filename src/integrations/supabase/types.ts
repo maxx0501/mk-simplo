@@ -45,6 +45,7 @@ export type Database = {
           subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
+          user_id: string
         }
         Insert: {
           cnpj?: string | null
@@ -60,6 +61,7 @@ export type Database = {
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          user_id: string
         }
         Update: {
           cnpj?: string | null
@@ -75,6 +77,7 @@ export type Database = {
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {

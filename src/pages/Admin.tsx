@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,17 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { 
   Store, 
   Users, 
   TrendingUp, 
   DollarSign,
   Search,
-  Plus,
   Edit,
-  Trash2,
   Eye,
   Building,
   Crown,
@@ -50,15 +47,6 @@ const Admin = () => {
   const [selectedPlan, setSelectedPlan] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedSubscriptionStatus, setSelectedSubscriptionStatus] = useState('all');
-  const [isNewStoreDialogOpen, setIsNewStoreDialogOpen] = useState(false);
-  const [newStore, setNewStore] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    cnpj: '',
-    owner_name: '',
-    plan_type: 'trial'
-  });
   const { toast } = useToast();
 
   // Carregar lojas do banco de dados
@@ -152,6 +140,7 @@ const Admin = () => {
   const getPlanLabel = (plan: string) => {
     const labels = {
       trial: 'Período de Teste',
+      free: 'Gratuito',
       basic: 'Básico',
       premium: 'Premium'
     };
@@ -161,6 +150,7 @@ const Admin = () => {
   const getPlanColor = (plan: string) => {
     const colors = {
       trial: 'bg-yellow-100 text-yellow-800',
+      free: 'bg-gray-100 text-gray-800',
       basic: 'bg-blue-100 text-blue-800',
       premium: 'bg-purple-100 text-purple-800'
     };
@@ -245,11 +235,11 @@ const Admin = () => {
   const stats = {
     totalStores: stores.length,
     activeStores: stores.filter(s => s.status === 'active').length,
-    paidPlans: stores.filter(s => s.plan_type !== 'trial' && s.subscription_status === 'active').length,
-    trialUsers: stores.filter(s => s.subscription_status === 'trial').length,
+    paidPlans: stores.filter(s => s.plan_type !== 'trial' && s.plan_type !== 'free' && s.subscription_status === 'active').length,
+    trialUsers: stores.filter(s => s.subscription_status === 'trial' || s.plan_type === 'free').length,
     expiredTrials: stores.filter(s => s.subscription_status === 'expired').length,
     expiringTrials: stores.filter(s => s.trial_ends_at && isTrialExpiring(s.trial_ends_at)).length,
-    revenue: stores.filter(s => s.subscription_status === 'active' && s.plan_type !== 'trial')
+    revenue: stores.filter(s => s.subscription_status === 'active' && s.plan_type !== 'trial' && s.plan_type !== 'free')
       .reduce((total, store) => {
         const amount = store.plan_type === 'basic' ? 29 : store.plan_type === 'premium' ? 49 : 0;
         return total + amount;
@@ -263,68 +253,6 @@ const Admin = () => {
       description: "Saindo do painel administrativo"
     });
     navigate('/');
-  };
-
-  const handleCreateStore = async () => {
-    try {
-      const { error } = await supabase
-        .from('stores')
-        .insert({
-          name: newStore.name,
-          email: newStore.email,
-          phone: newStore.phone || null,
-          cnpj: newStore.cnpj || null,
-          owner_name: newStore.owner_name,
-          plan_type: newStore.plan_type,
-          status: 'active',
-          subscription_status: 'trial',
-          trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        });
-
-      if (error) {
-        console.error('Erro ao criar loja:', error);
-        toast({
-          title: "Erro ao criar loja",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Recarregar lista de lojas
-      const { data } = await supabase
-        .from('stores')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setStores(data);
-      }
-
-      // Limpar formulário
-      setNewStore({
-        name: '',
-        email: '',
-        phone: '',
-        cnpj: '',
-        owner_name: '',
-        plan_type: 'trial'
-      });
-      
-      setIsNewStoreDialogOpen(false);
-      
-      toast({
-        title: "Loja criada com sucesso",
-        description: `${newStore.name} foi adicionada ao sistema`
-      });
-    } catch (error: any) {
-      console.error('Erro inesperado ao criar loja:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Não foi possível criar a loja",
-        variant: "destructive"
-      });
-    }
   };
 
   if (loading) {
@@ -413,7 +341,7 @@ const Admin = () => {
                 <Clock className="h-6 w-6 text-yellow-600" />
                 <div className="ml-3">
                   <div className="text-xl font-bold text-yellow-600">{stats.trialUsers}</div>
-                  <div className="text-xs text-gray-600">Em Teste</div>
+                  <div className="text-xs text-gray-600">Gratuito/Teste</div>
                 </div>
               </div>
             </CardContent>
@@ -464,6 +392,7 @@ const Admin = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os planos</SelectItem>
+                  <SelectItem value="free">Gratuito</SelectItem>
                   <SelectItem value="trial">Período de Teste</SelectItem>
                   <SelectItem value="basic">Básico</SelectItem>
                   <SelectItem value="premium">Premium</SelectItem>
@@ -494,109 +423,6 @@ const Admin = () => {
                   <SelectItem value="suspended">Suspensa</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Dialog open={isNewStoreDialogOpen} onOpenChange={setIsNewStoreDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Loja
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Criar Nova Loja</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="store-name" className="text-right">
-                        Nome
-                      </Label>
-                      <Input
-                        id="store-name"
-                        value={newStore.name}
-                        onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
-                        className="col-span-3"
-                        placeholder="Nome da loja"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="store-email" className="text-right">
-                        Email
-                      </Label>
-                      <Input
-                        id="store-email"
-                        type="email"
-                        value={newStore.email}
-                        onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
-                        className="col-span-3"
-                        placeholder="email@exemplo.com"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="owner-name" className="text-right">
-                        Proprietário
-                      </Label>
-                      <Input
-                        id="owner-name"
-                        value={newStore.owner_name}
-                        onChange={(e) => setNewStore({ ...newStore, owner_name: e.target.value })}
-                        className="col-span-3"
-                        placeholder="Nome do proprietário"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="store-phone" className="text-right">
-                        Telefone
-                      </Label>
-                      <Input
-                        id="store-phone"
-                        value={newStore.phone}
-                        onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
-                        className="col-span-3"
-                        placeholder="(11) 99999-9999"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="store-cnpj" className="text-right">
-                        CNPJ
-                      </Label>
-                      <Input
-                        id="store-cnpj"
-                        value={newStore.cnpj}
-                        onChange={(e) => setNewStore({ ...newStore, cnpj: e.target.value })}
-                        className="col-span-3"
-                        placeholder="00.000.000/0001-00"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="store-plan" className="text-right">
-                        Plano
-                      </Label>
-                      <Select value={newStore.plan_type} onValueChange={(value) => setNewStore({ ...newStore, plan_type: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Selecionar plano" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="trial">Período de Teste</SelectItem>
-                          <SelectItem value="basic">Básico</SelectItem>
-                          <SelectItem value="premium">Premium</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsNewStoreDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={handleCreateStore}
-                      disabled={!newStore.name || !newStore.email || !newStore.owner_name}
-                    >
-                      Criar Loja
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
             </div>
           </CardContent>
         </Card>
