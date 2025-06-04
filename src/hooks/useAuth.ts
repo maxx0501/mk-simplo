@@ -73,7 +73,7 @@ export const useAuth = () => {
             .maybeSingle();
 
           if (userStoreData && userStoreData.stores) {
-            console.log('Usuário pertence a uma loja:', userStoreData.stores.name);
+            console.log('Usuário já tem loja associada:', userStoreData.stores.name);
             localStorage.setItem('mksimplo_user', JSON.stringify({
               id: data.user.id,
               email: data.user.email,
@@ -82,14 +82,69 @@ export const useAuth = () => {
               store_name: userStoreData.stores.name
             }));
           } else {
-            console.log('Usuário não tem loja associada');
-            toast({
-              title: "Erro no login",
-              description: "Usuário não possui loja associada. Entre em contato com o suporte.",
-              variant: "destructive"
-            });
-            return;
+            console.log('Usuário não tem loja associada, criando loja...');
+            
+            // Obter dados do usuário para criar a loja
+            const storeName = data.user.user_metadata?.store_name || 'Minha Loja';
+            const ownerName = data.user.user_metadata?.full_name || 'Proprietário';
+            
+            // Criar a loja
+            const { data: storeData, error: storeError } = await supabase
+              .from('stores')
+              .insert({
+                name: storeName,
+                email: data.user.email,
+                owner_name: ownerName,
+                plan_type: 'free',
+                status: 'active',
+                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 dias
+              })
+              .select()
+              .single();
+
+            if (storeError) {
+              console.error('Erro ao criar loja:', storeError);
+              toast({
+                title: "Erro ao configurar loja",
+                description: "Houve um problema ao configurar sua loja. Tente novamente.",
+                variant: "destructive"
+              });
+              return;
+            }
+
+            console.log('Loja criada com sucesso:', storeData);
+
+            // Associar usuário à loja
+            const { error: userStoreError } = await supabase
+              .from('user_stores')
+              .insert({
+                user_id: data.user.id,
+                store_id: storeData.id,
+                role: 'owner'
+              });
+
+            if (userStoreError) {
+              console.error('Erro ao associar usuário à loja:', userStoreError);
+              toast({
+                title: "Erro ao configurar loja",
+                description: "Houve um problema ao associar você à loja. Tente novamente.",
+                variant: "destructive"
+              });
+              return;
+            }
+
+            console.log('Usuário associado à loja com sucesso');
+
+            // Salvar dados do usuário
+            localStorage.setItem('mksimplo_user', JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              role: 'owner',
+              store_id: storeData.id,
+              store_name: storeData.name
+            }));
           }
+          
           navigate('/dashboard');
         }
 
