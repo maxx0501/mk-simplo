@@ -1,11 +1,12 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const loginUser = async (email: string, password: string) => {
   console.log('Tentando fazer login com email:', email);
 
-  // Admin demo check
-  if (email === 'admin@mksimplo.com') {
-    console.log('Login de admin demo');
+  // Admin demo check - usar um approach mais limpo
+  if (email === 'admin@mksimplo.com' && password === 'admin123') {
+    console.log('Login de admin demo autorizado');
     return {
       success: true,
       userData: {
@@ -14,7 +15,8 @@ export const loginUser = async (email: string, password: string) => {
         role: 'superadmin',
         store_id: null
       },
-      isDemo: true
+      isDemo: true,
+      redirectTo: '/admin'
     };
   }
 
@@ -35,7 +37,7 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error('Usuário não encontrado');
   }
 
-  // Verificar se é admin da plataforma usando fallback para platform_admins
+  // Verificar se é admin da plataforma usando a tabela platform_admins
   try {
     console.log('Verificando se é superadmin via tabela platform_admins...');
     const { data: adminData } = await supabase

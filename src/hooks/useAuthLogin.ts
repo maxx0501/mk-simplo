@@ -16,15 +16,19 @@ export const useAuthLogin = () => {
       const result = await loginUser(email, password);
       
       if (result.isDemo) {
-        localStorage.setItem('mksimplo_user', JSON.stringify(result.userData));
+        // Para admin demo, usar dados especiais no localStorage
+        localStorage.setItem('mksimplo_user', JSON.stringify({
+          ...result.userData,
+          isDemo: true
+        }));
         
         toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao painel administrativo"
+          title: "Login de admin realizado!",
+          description: "Bem-vindo ao painel administrativo da plataforma"
         });
         
         navigate('/admin');
-        return;
+        return result;
       }
 
       localStorage.setItem('mksimplo_user', JSON.stringify(result.userData));
@@ -35,6 +39,7 @@ export const useAuthLogin = () => {
       });
 
       navigate(result.redirectTo || '/dashboard');
+      return result;
 
     } catch (error: any) {
       console.error('Erro no login:', error);
@@ -52,6 +57,8 @@ export const useAuthLogin = () => {
         description: errorMessage,
         variant: "destructive"
       });
+      
+      return undefined;
     } finally {
       setLoading(false);
     }
