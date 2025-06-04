@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,9 @@ import {
   Store, 
   Crown,
   LogOut,
-  Building
+  Building,
+  RefreshCw,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { createTestStores } from '@/utils/adminTestUtils';
 
 interface Store {
   id: string;
@@ -34,6 +36,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userValidated, setUserValidated] = useState(false);
   const { toast } = useToast();
 
@@ -100,157 +103,160 @@ const Admin = () => {
     checkAdminAccess();
   }, [navigate, toast]);
 
-  // Carregar lojas do banco
-  useEffect(() => {
-    if (!userValidated) {
-      return;
-    }
+  // Função para carregar lojas do banco
+  const loadStoresFromDatabase = async () => {
+    try {
+      console.log('🔍 Tentando carregar lojas reais do banco de dados...');
+      
+      // Tentar diferentes abordagens para acessar os dados
+      const { data: storesData, error } = await supabase
+        .from('stores')
+        .select('id, name, owner_name, plan_type, created_at, status')
+        .order('created_at', { ascending: false });
 
-    const loadStores = async () => {
-      try {
-        console.log('🔍 Carregando lojas da tabela stores...');
-        
-        // Verificar se é admin demo primeiro
-        const userData = localStorage.getItem('mksimplo_user');
-        const user = userData ? JSON.parse(userData) : null;
-        
-        if (user?.isDemo && user?.email === 'admin@mksimplo.com') {
-          console.log('📝 Criando dados de exemplo para admin demo...');
-          const exampleStores = [
-            {
-              id: '1',
-              name: 'Tech Store Premium',
-              owner_name: 'João Silva Santos',
-              plan_type: 'pro',
-              created_at: '2024-01-15T10:30:00Z',
-              status: 'active'
-            },
-            {
-              id: '2', 
-              name: 'Loja da Maria',
-              owner_name: 'Maria Santos Oliveira',
-              plan_type: 'basic',
-              created_at: '2024-02-20T14:45:00Z',
-              status: 'active'
-            },
-            {
-              id: '3',
-              name: 'SuperMercado Central',
-              owner_name: 'Carlos Roberto Lima',
-              plan_type: 'premium',
-              created_at: '2024-03-10T09:15:00Z',
-              status: 'active'
-            },
-            {
-              id: '4',
-              name: 'Boutique Elegance',
-              owner_name: 'Ana Paula Costa',
-              plan_type: 'free',
-              created_at: '2024-03-25T16:20:00Z',
-              status: 'active'
-            },
-            {
-              id: '5',
-              name: 'Farmácia São João',
-              owner_name: 'Pedro Henrique Souza',
-              plan_type: 'trial',
-              created_at: '2024-04-05T11:30:00Z',
-              status: 'active'
-            }
-          ];
-          
-          console.log('✅ Dados de exemplo criados:', exampleStores.length, 'lojas');
-          setStores(exampleStores);
-          setLoading(false);
-          return;
-        }
+      console.log('📊 Resultado da busca:', {
+        dados: storesData?.length || 0,
+        erro: error?.message || 'Nenhum',
+        storesData
+      });
 
-        // Para usuários reais, vamos tentar diferentes estratégias
-        console.log('🔐 Verificando sessão atual...');
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('❌ Erro na sessão:', sessionError);
-        } else {
-          console.log('📋 Status da sessão:', sessionData.session ? 'Ativa' : 'Inativa');
-          console.log('👤 Usuário da sessão:', sessionData.session?.user?.email);
-        }
-
-        // Primeira tentativa: buscar todas as lojas (para admin)
-        console.log('🔍 Tentativa 1: Buscando TODAS as lojas (acesso admin)...');
-        let { data: allStores, error: allStoresError } = await supabase
-          .from('stores')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        console.log('📊 Resultado tentativa 1:', {
-          dados: allStores?.length || 0,
-          erro: allStoresError?.message || 'Nenhum'
-        });
-
-        if (allStoresError) {
-          console.log('⚠️ Erro na primeira tentativa, isso pode ser por RLS');
-          
-          // Segunda tentativa: usando service role (se disponível)
-          console.log('🔍 Tentativa 2: Verificando se conseguimos contornar RLS...');
-          
-          // Terceira tentativa: buscar usando política diferente
-          console.log('🔍 Tentativa 3: Buscando dados básicos das lojas...');
-          const { data: basicStores, error: basicError } = await supabase
-            .from('stores')
-            .select('id, name, owner_name, plan_type, created_at, status')
-            .order('created_at', { ascending: false });
-
-          console.log('📊 Resultado tentativa 3:', {
-            dados: basicStores?.length || 0,
-            erro: basicError?.message || 'Nenhum'
-          });
-
-          if (basicStores && basicStores.length > 0) {
-            console.log('✅ Sucesso na tentativa 3!');
-            setStores(basicStores);
-          } else {
-            console.log('❌ Todas as tentativas falharam, usando dados de fallback');
-            
-            // Dados de fallback para quando não conseguimos acessar o banco
-            const fallbackStores = [
-              {
-                id: 'fallback-1',
-                name: 'Dados indisponíveis - Problema de acesso',
-                owner_name: 'Administrador',
-                plan_type: 'unknown',
-                created_at: new Date().toISOString(),
-                status: 'unknown'
-              }
-            ];
-            
-            setStores(fallbackStores);
-            
-            toast({
-              title: "Problema de acesso aos dados",
-              description: "Não foi possível carregar as lojas. Pode ser um problema de permissões RLS.",
-              variant: "destructive"
-            });
-          }
-        } else {
-          console.log('✅ Lojas carregadas com sucesso!', allStores?.length || 0);
-          setStores(allStores || []);
-        }
-
-      } catch (error: any) {
-        console.error('❌ Erro inesperado:', error);
-        toast({
-          title: "Erro inesperado",
-          description: "Não foi possível carregar as lojas: " + error.message,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('❌ Erro ao buscar lojas:', error);
+        throw error;
       }
-    };
 
+      if (storesData && storesData.length > 0) {
+        console.log('✅ Lojas reais encontradas:', storesData.length);
+        setStores(storesData);
+        return true;
+      }
+
+      console.log('📭 Nenhuma loja real encontrada no banco');
+      return false;
+    } catch (error: any) {
+      console.error('❌ Erro ao carregar lojas:', error);
+      return false;
+    }
+  };
+
+  // Função para criar lojas de exemplo
+  const createExampleStores = () => {
+    console.log('📝 Criando dados de exemplo...');
+    const exampleStores = [
+      {
+        id: 'example-1',
+        name: 'Tech Store Premium',
+        owner_name: 'João Silva Santos',
+        plan_type: 'pro',
+        created_at: '2024-01-15T10:30:00Z',
+        status: 'active'
+      },
+      {
+        id: 'example-2', 
+        name: 'Loja da Maria',
+        owner_name: 'Maria Santos Oliveira',
+        plan_type: 'basic',
+        created_at: '2024-02-20T14:45:00Z',
+        status: 'active'
+      },
+      {
+        id: 'example-3',
+        name: 'SuperMercado Central',
+        owner_name: 'Carlos Roberto Lima',
+        plan_type: 'premium',
+        created_at: '2024-03-10T09:15:00Z',
+        status: 'active'
+      }
+    ];
+    
+    setStores(exampleStores);
+    console.log('✅ Dados de exemplo criados:', exampleStores.length, 'lojas');
+  };
+
+  // Carregar lojas
+  const loadStores = async () => {
+    if (!userValidated) return;
+
+    try {
+      setLoading(true);
+      
+      // Verificar se é admin demo
+      const userData = localStorage.getItem('mksimplo_user');
+      const user = userData ? JSON.parse(userData) : null;
+      
+      // Primeiro, sempre tentar carregar lojas reais do banco
+      const realStoresLoaded = await loadStoresFromDatabase();
+      
+      // Se não conseguiu carregar lojas reais E é admin demo, usar exemplos
+      if (!realStoresLoaded && user?.isDemo && user?.email === 'admin@mksimplo.com') {
+        console.log('👤 Admin demo: usando dados de exemplo como fallback');
+        createExampleStores();
+      } else if (!realStoresLoaded) {
+        // Para usuários reais sem lojas
+        console.log('📭 Nenhuma loja encontrada');
+        setStores([]);
+        toast({
+          title: "Nenhuma loja encontrada",
+          description: "Não há lojas cadastradas no sistema ainda.",
+        });
+      }
+
+    } catch (error: any) {
+      console.error('❌ Erro inesperado:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível carregar as lojas: " + error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para atualizar dados
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadStores();
+    setRefreshing(false);
+    toast({
+      title: "Dados atualizados",
+      description: "As informações das lojas foram recarregadas."
+    });
+  };
+
+  // Função para criar lojas de teste no banco
+  const handleCreateTestStores = async () => {
+    try {
+      setRefreshing(true);
+      console.log('🧪 Criando lojas de teste no banco...');
+      
+      const result = await createTestStores();
+      
+      if (result.success) {
+        toast({
+          title: "Lojas de teste criadas",
+          description: `${result.data?.length || 0} lojas de teste foram criadas no banco de dados.`
+        });
+        await loadStores(); // Recarregar dados
+      } else {
+        throw new Error(result.error?.message || 'Erro desconhecido');
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao criar lojas de teste:', error);
+      toast({
+        title: "Erro ao criar lojas de teste",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Carregar lojas quando o usuário for validado
+  useEffect(() => {
     loadStores();
-  }, [userValidated, toast]);
+  }, [userValidated]);
 
   const getPlanLabel = (plan: string) => {
     const labels = {
@@ -385,14 +391,45 @@ const Admin = () => {
         {/* Lista de Lojas */}
         <Card>
           <CardHeader>
-            <CardTitle>Lojas Cadastradas ({stores.length})</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Lojas Cadastradas ({stores.length})</CardTitle>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreateTestStores}
+                  disabled={refreshing}
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Lojas de Teste
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {stores.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium mb-2">Nenhuma loja encontrada</h3>
-                <p>Verifique o console para logs de debug sobre o problema de acesso</p>
+                <p className="mb-4">Não há lojas cadastradas no sistema ainda.</p>
+                <Button
+                  onClick={handleCreateTestStores}
+                  disabled={refreshing}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Lojas de Teste
+                </Button>
               </div>
             ) : (
               <Table>
