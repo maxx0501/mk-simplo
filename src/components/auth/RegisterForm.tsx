@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthRegister } from '@/hooks/useAuthRegister';
 import { useNavigate } from 'react-router-dom';
 
 export const RegisterForm = () => {
@@ -11,7 +11,7 @@ export const RegisterForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const { handleRegister, loading } = useAuth();
+  const { handleRegister, loading } = useAuthRegister();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -3,14 +3,18 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthLogin } from '@/hooks/useAuthLogin';
+import { useAuthRegister } from '@/hooks/useAuthRegister';
 import { Mail } from 'lucide-react';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showResend, setShowResend] = useState(false);
-  const { handleLogin, resendConfirmation, loading } = useAuth();
+  const { handleLogin, loading: loginLoading } = useAuthLogin();
+  const { resendConfirmation, loading: resendLoading } = useAuthRegister();
+
+  const loading = loginLoading || resendLoading;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

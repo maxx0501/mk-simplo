@@ -6,14 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useStoreCreation } from '@/hooks/useStoreCreation';
 
 const CreateStore = () => {
   const [storeName, setStoreName] = useState('');
   const [phone, setPhone] = useState('');
   const [cnpj, setCnpj] = useState('');
   const navigate = useNavigate();
-  const { createStore, loading } = useAuth();
+  const { createStore, loading } = useStoreCreation();
 
   useEffect(() => {
     // Verificar se o usuário está logado
