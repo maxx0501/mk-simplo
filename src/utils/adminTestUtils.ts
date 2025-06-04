@@ -4,16 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 export const createTestStores = async () => {
   console.log('🧪 Criando lojas de teste no banco...');
   
-  // Obter o usuário atual
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    console.error('❌ Usuário não autenticado:', userError);
-    return { success: false, error: { message: 'Usuário não autenticado' } };
-  }
-
-  console.log('👤 Usuário atual:', user.id, user.email);
-  
   const testStores = [
     {
       name: 'Loja Tech Solutions',
@@ -22,8 +12,7 @@ export const createTestStores = async () => {
       plan_type: 'pro',
       status: 'active',
       phone: '(11) 99999-1234',
-      cnpj: '12.345.678/0001-90',
-      user_id: user.id
+      cnpj: '12.345.678/0001-90'
     },
     {
       name: 'Boutique Fashion Style',
@@ -31,8 +20,7 @@ export const createTestStores = async () => {
       email: 'maria@fashionstyle.com',
       plan_type: 'premium',
       status: 'active',
-      phone: '(11) 88888-5678',
-      user_id: user.id
+      phone: '(11) 88888-5678'
     },
     {
       name: 'Padaria do Bairro',
@@ -40,8 +28,7 @@ export const createTestStores = async () => {
       email: 'carlos@padariabairro.com',
       plan_type: 'basic',
       status: 'active',
-      phone: '(11) 77777-9012',
-      user_id: user.id
+      phone: '(11) 77777-9012'
     },
     {
       name: 'Farmácia Vida Saudável',
@@ -49,8 +36,7 @@ export const createTestStores = async () => {
       email: 'ana@vidasaudavel.com',
       plan_type: 'free',
       status: 'active',
-      phone: '(11) 66666-3456',
-      user_id: user.id
+      phone: '(11) 66666-3456'
     },
     {
       name: 'Oficina do João',
@@ -58,13 +44,11 @@ export const createTestStores = async () => {
       email: 'joao@oficina.com',
       plan_type: 'basic',
       status: 'active',
-      phone: '(11) 55555-7890',
-      user_id: user.id
+      phone: '(11) 55555-7890'
     }
   ];
 
   try {
-    // Inserir as lojas
     console.log('📝 Inserindo lojas na tabela stores...');
     const { data: storesData, error: storesError } = await supabase
       .from('stores')
@@ -77,30 +61,6 @@ export const createTestStores = async () => {
     }
 
     console.log('✅ Lojas criadas com sucesso:', storesData?.length);
-
-    // Criar associações na tabela user_stores para cada loja criada
-    if (storesData && storesData.length > 0) {
-      console.log('🔗 Criando associações user_stores...');
-      
-      const userStoreAssociations = storesData.map(store => ({
-        user_id: user.id,
-        store_id: store.id,
-        role: 'owner'
-      }));
-
-      const { error: associationError } = await supabase
-        .from('user_stores')
-        .insert(userStoreAssociations);
-
-      if (associationError) {
-        console.error('❌ Erro ao criar associações user_stores:', associationError);
-        // Não falhar completamente, apenas avisar
-        console.log('⚠️ Lojas criadas mas associações falharam');
-      } else {
-        console.log('✅ Associações user_stores criadas com sucesso');
-      }
-    }
-
     return { success: true, data: storesData };
   } catch (error) {
     console.error('❌ Erro inesperado ao criar lojas:', error);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,7 @@ interface Store {
   plan_type: string;
   created_at: string;
   status: string;
+  email: string;
 }
 
 const Admin = () => {
@@ -106,15 +108,15 @@ const Admin = () => {
   // Função para carregar lojas do banco
   const loadStoresFromDatabase = async () => {
     try {
-      console.log('🔍 Carregando todas as lojas do banco...');
+      console.log('🔍 Carregando todas as lojas da tabela stores...');
       
-      // Buscar TODAS as lojas do banco
+      // Buscar TODAS as lojas diretamente da tabela stores
       const { data: storesData, error } = await supabase
         .from('stores')
-        .select('id, name, owner_name, plan_type, created_at, status')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Resultado da busca de lojas:', {
+      console.log('📊 Resultado da consulta stores:', {
         encontradas: storesData?.length || 0,
         erro: error?.message || 'Nenhum',
         dados: storesData
@@ -126,14 +128,14 @@ const Admin = () => {
       }
 
       if (storesData && storesData.length > 0) {
-        console.log('✅ Lojas encontradas no banco:', storesData.length);
+        console.log('✅ Lojas encontradas:', storesData.length);
         setStores(storesData);
-        return true;
+      } else {
+        console.log('📭 Nenhuma loja encontrada na tabela stores');
+        setStores([]);
       }
 
-      console.log('📭 Nenhuma loja encontrada no banco');
-      setStores([]);
-      return false;
+      return storesData?.length || 0;
     } catch (error: any) {
       console.error('❌ Erro ao carregar lojas:', error);
       throw error;
@@ -174,14 +176,14 @@ const Admin = () => {
   const handleCreateTestStores = async () => {
     try {
       setRefreshing(true);
-      console.log('🧪 Criando lojas de teste no banco...');
+      console.log('🧪 Criando lojas de teste...');
       
       const result = await createTestStores();
       
       if (result.success) {
         toast({
           title: "Lojas de teste criadas",
-          description: `${result.data?.length || 0} lojas de teste foram criadas no banco de dados.`
+          description: `${result.data?.length || 0} lojas de teste foram criadas no banco.`
         });
         await loadStores(); // Recarregar dados
       } else {
@@ -383,6 +385,7 @@ const Admin = () => {
                   <TableRow>
                     <TableHead>Nome da Loja</TableHead>
                     <TableHead>Proprietário</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>Data de Criação</TableHead>
                     <TableHead>Status</TableHead>
@@ -393,6 +396,7 @@ const Admin = () => {
                     <TableRow key={store.id}>
                       <TableCell className="font-medium">{store.name}</TableCell>
                       <TableCell>{store.owner_name}</TableCell>
+                      <TableCell>{store.email}</TableCell>
                       <TableCell>
                         <Badge className={getPlanColor(store.plan_type)}>
                           {getPlanLabel(store.plan_type)}
