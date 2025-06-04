@@ -70,36 +70,16 @@ const Admin = () => {
           return;
         }
 
-        // Para usuários reais, verificar na tabela profiles
+        // Para usuários reais, verificar na tabela platform_admins (fallback temporário)
         try {
-          console.log('Verificando superadmin via tabela profiles...');
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_superadmin')
-            .eq('id', user.id)
+          console.log('Verificando superadmin via tabela platform_admins...');
+          const { data: adminData } = await supabase
+            .from('platform_admins')
+            .select('*')
+            .eq('user_id', user.id)
             .maybeSingle();
 
-          if (profileError) {
-            console.error('Erro ao verificar perfil:', profileError);
-            
-            // Fallback: verificar na tabela platform_admins (compatibilidade)
-            const { data: adminData } = await supabase
-              .from('platform_admins')
-              .select('*')
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-            if (!adminData) {
-              console.log('❌ Acesso negado: usuário não é superadmin');
-              toast({
-                title: "Acesso negado",
-                description: "Você não tem permissão para acessar o painel administrativo",
-                variant: "destructive"
-              });
-              navigate('/dashboard');
-              return;
-            }
-          } else if (!profile?.is_superadmin) {
+          if (!adminData) {
             console.log('❌ Acesso negado: usuário não é superadmin');
             toast({
               title: "Acesso negado",

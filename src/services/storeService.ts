@@ -38,25 +38,27 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     throw new Error('Você já possui uma loja cadastrada.');
   }
 
-  // Verificar/criar perfil do usuário usando insert direto
-  console.log('Verificando perfil do usuário...');
+  // Para criar perfil, vamos usar SQL direto via RPC (temporário até tipos serem atualizados)
+  console.log('Criando perfil do usuário se necessário...');
   try {
-    // Tentar criar perfil se não existir
-    const { error: profileInsertError } = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        email: user.email || '',
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário'
-      });
-
-    if (profileInsertError && !profileInsertError.message.includes('duplicate key')) {
-      console.error('Erro ao criar perfil:', profileInsertError);
-    } else {
-      console.log('Perfil criado ou já existe');
-    }
+    // Usar SQL raw para inserir perfil (fallback temporário)
+    await supabase.rpc('exec_sql', {
+      sql: `
+        INSERT INTO public.profiles (id, email, full_name)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (id) DO NOTHING
+      `,
+      params: [
+        user.id,
+        user.email || '',
+        user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário'
+      ]
+    }).catch(() => {
+      // Se RPC não existir, apenas continuar
+      console.log('⚠️ Não foi possível criar perfil, continuando...');
+    });
   } catch (profileError) {
-    console.log('⚠️ Erro ao criar/verificar perfil, continuando:', profileError);
+    console.log('⚠️ Erro ao criar perfil, continuando:', profileError);
     // Não bloquear a criação da loja por isso
   }
 

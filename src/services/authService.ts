@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const loginUser = async (email: string, password: string) => {
@@ -36,19 +35,17 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error('Usuário não encontrado');
   }
 
-  // Verificar se é admin da plataforma usando a tabela profiles
+  // Verificar se é admin da plataforma usando fallback para platform_admins
   try {
-    console.log('Verificando se é superadmin via tabela profiles...');
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_superadmin')
-      .eq('id', data.user.id)
+    console.log('Verificando se é superadmin via tabela platform_admins...');
+    const { data: adminData } = await supabase
+      .from('platform_admins')
+      .select('*')
+      .eq('user_id', data.user.id)
       .maybeSingle();
 
-    if (profileError) {
-      console.error('Erro ao verificar perfil:', profileError);
-    } else if (profile?.is_superadmin) {
-      console.log('Usuário é superadmin da plataforma');
+    if (adminData) {
+      console.log('Usuário é admin da plataforma');
       return {
         success: true,
         userData: {
@@ -61,28 +58,7 @@ export const loginUser = async (email: string, password: string) => {
       };
     }
   } catch (profileCheckError) {
-    console.log('⚠️ Erro ao verificar perfil, tentando fallback para platform_admins');
-    
-    // Fallback: verificar na tabela platform_admins
-    const { data: adminData } = await supabase
-      .from('platform_admins')
-      .select('*')
-      .eq('user_id', data.user.id)
-      .maybeSingle();
-
-    if (adminData) {
-      console.log('Usuário é admin da plataforma (via platform_admins)');
-      return {
-        success: true,
-        userData: {
-          id: data.user.id,
-          email: data.user.email,
-          role: 'superadmin',
-          store_id: null
-        },
-        redirectTo: '/admin'
-      };
-    }
+    console.log('⚠️ Erro ao verificar admin, continuando como usuário normal:', profileCheckError);
   }
 
   // Buscar dados da loja do usuário
