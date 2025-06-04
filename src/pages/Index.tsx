@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,18 +11,14 @@ const Index = () => {
 
   const handleStartFree = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Sempre fazer logout antes de redirecionar para cadastro
+      await supabase.auth.signOut();
       
-      if (!user) {
-        // Redirecionar para registro se não estiver logado
-        window.location.href = '/register';
-        return;
-      }
-
-      // Se já estiver logado, redirecionar para dashboard
-      window.location.href = '/dashboard';
+      // Redirecionar para a página de cadastro
+      window.location.href = '/register';
     } catch (error) {
-      console.error('Erro ao verificar usuário:', error);
+      console.error('Erro ao limpar sessão:', error);
+      // Mesmo com erro, redirecionar para cadastro
       window.location.href = '/register';
     }
   };

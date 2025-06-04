@@ -42,97 +42,10 @@ interface Store {
   updated_at: string;
 }
 
-interface Subscription {
-  id: string;
-  email: string;
-  plan_type: string;
-  status: string;
-  trial_start: string | null;
-  trial_end: string | null;
-  subscription_start: string | null;
-  subscription_end: string | null;
-  created_at: string;
-}
-
-// Dados de exemplo atualizados com informações de assinatura
-const sampleStores: Store[] = [
-  {
-    id: '1',
-    name: 'Loja do João',
-    email: 'joao@lojadojoao.com',
-    phone: '(11) 99999-1234',
-    cnpj: '12.345.678/0001-90',
-    owner_name: 'João Silva',
-    plan_type: 'premium',
-    status: 'active',
-    subscription_status: 'active',
-    trial_ends_at: null,
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: '2',
-    name: 'Tech Store',
-    email: 'contato@techstore.com',
-    phone: '(11) 88888-5678',
-    cnpj: '98.765.432/0001-10',
-    owner_name: 'Maria Santos',
-    plan_type: 'basic',
-    status: 'active',
-    subscription_status: 'active',
-    trial_ends_at: null,
-    created_at: '2024-02-01T14:30:00Z',
-    updated_at: '2024-02-01T14:30:00Z'
-  },
-  {
-    id: '3',
-    name: 'Moda & Estilo',
-    email: 'admin@modaestilo.com',
-    phone: '(21) 77777-9999',
-    cnpj: '11.222.333/0001-44',
-    owner_name: 'Ana Costa',
-    plan_type: 'trial',
-    status: 'active',
-    subscription_status: 'trial',
-    trial_ends_at: '2024-06-11T09:15:00Z',
-    created_at: '2024-06-04T09:15:00Z',
-    updated_at: '2024-06-04T09:15:00Z'
-  },
-  {
-    id: '4',
-    name: 'Casa & Decoração',
-    email: 'vendas@casadecor.com',
-    phone: '(31) 66666-7777',
-    cnpj: '55.666.777/0001-88',
-    owner_name: 'Carlos Oliveira',
-    plan_type: 'trial',
-    status: 'active',
-    subscription_status: 'trial',
-    trial_ends_at: '2024-06-06T11:20:00Z',
-    created_at: '2024-05-30T11:20:00Z',
-    updated_at: '2024-05-30T11:20:00Z'
-  },
-  {
-    id: '5',
-    name: 'Sports Shop',
-    email: 'info@sportsshop.com',
-    phone: '(41) 55555-3333',
-    cnpj: '77.888.999/0001-22',
-    owner_name: 'Pedro Lima',
-    plan_type: 'trial',
-    status: 'inactive',
-    subscription_status: 'expired',
-    trial_ends_at: '2024-05-28T15:00:00Z',
-    created_at: '2024-05-21T15:00:00Z',
-    updated_at: '2024-05-28T15:00:00Z'
-  }
-];
-
 const Admin = () => {
   const navigate = useNavigate();
-  const [stores, setStores] = useState<Store[]>(sampleStores);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -148,6 +61,42 @@ const Admin = () => {
   });
   const { toast } = useToast();
 
+  // Carregar lojas do banco de dados
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        console.log('Carregando lojas do banco de dados...');
+        const { data, error } = await supabase
+          .from('stores')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Erro ao carregar lojas:', error);
+          toast({
+            title: "Erro ao carregar lojas",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          console.log('Lojas carregadas:', data);
+          setStores(data || []);
+        }
+      } catch (error: any) {
+        console.error('Erro inesperado ao carregar lojas:', error);
+        toast({
+          title: "Erro inesperado",
+          description: "Não foi possível carregar as lojas",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStores();
+  }, [toast]);
+
   const filteredStores = stores.filter(store => {
     const matchesSearch = store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          store.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -159,17 +108,45 @@ const Admin = () => {
     return matchesSearch && matchesPlan && matchesStatus && matchesSubscriptionStatus;
   });
 
-  const updateStoreStatus = (storeId: string, newStatus: string) => {
-    setStores(stores.map(store => 
-      store.id === storeId 
-        ? { ...store, status: newStatus, updated_at: new Date().toISOString() }
-        : store
-    ));
+  const updateStoreStatus = async (storeId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({ 
+          status: newStatus, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', storeId);
 
-    toast({
-      title: "Status atualizado",
-      description: "Status da loja foi alterado com sucesso"
-    });
+      if (error) {
+        console.error('Erro ao atualizar status:', error);
+        toast({
+          title: "Erro ao atualizar status",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Atualizar estado local
+      setStores(stores.map(store => 
+        store.id === storeId 
+          ? { ...store, status: newStatus, updated_at: new Date().toISOString() }
+          : store
+      ));
+
+      toast({
+        title: "Status atualizado",
+        description: "Status da loja foi alterado com sucesso"
+      });
+    } catch (error: any) {
+      console.error('Erro inesperado ao atualizar status:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível atualizar o status",
+        variant: "destructive"
+      });
+    }
   };
 
   const getPlanLabel = (plan: string) => {
@@ -264,7 +241,7 @@ const Admin = () => {
     return Math.max(0, diffDays);
   };
 
-  // Estatísticas baseadas nos dados
+  // Estatísticas baseadas nos dados reais
   const stats = {
     totalStores: stores.length,
     activeStores: stores.filter(s => s.status === 'active').length,
@@ -280,7 +257,7 @@ const Admin = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('mksimplo_admin');
+    localStorage.removeItem('mksimplo_user');
     toast({
       title: "Logout realizado",
       description: "Saindo do painel administrativo"
@@ -288,37 +265,78 @@ const Admin = () => {
     navigate('/');
   };
 
-  const handleCreateStore = () => {
-    // Adicionar nova loja aos dados
-    const newStoreData: Store = {
-      id: (stores.length + 1).toString(),
-      ...newStore,
-      status: 'active',
-      subscription_status: 'trial',
-      trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias a partir de agora
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+  const handleCreateStore = async () => {
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .insert({
+          name: newStore.name,
+          email: newStore.email,
+          phone: newStore.phone || null,
+          cnpj: newStore.cnpj || null,
+          owner_name: newStore.owner_name,
+          plan_type: newStore.plan_type,
+          status: 'active',
+          subscription_status: 'trial',
+          trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        });
 
-    setStores([...stores, newStoreData]);
-    
-    // Limpar formulário
-    setNewStore({
-      name: '',
-      email: '',
-      phone: '',
-      cnpj: '',
-      owner_name: '',
-      plan_type: 'trial'
-    });
-    
-    setIsNewStoreDialogOpen(false);
-    
-    toast({
-      title: "Loja criada com sucesso",
-      description: `${newStoreData.name} foi adicionada ao sistema`
-    });
+      if (error) {
+        console.error('Erro ao criar loja:', error);
+        toast({
+          title: "Erro ao criar loja",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Recarregar lista de lojas
+      const { data } = await supabase
+        .from('stores')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setStores(data);
+      }
+
+      // Limpar formulário
+      setNewStore({
+        name: '',
+        email: '',
+        phone: '',
+        cnpj: '',
+        owner_name: '',
+        plan_type: 'trial'
+      });
+      
+      setIsNewStoreDialogOpen(false);
+      
+      toast({
+        title: "Loja criada com sucesso",
+        description: `${newStore.name} foi adicionada ao sistema`
+      });
+    } catch (error: any) {
+      console.error('Erro inesperado ao criar loja:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível criar a loja",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Carregando painel administrativo...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

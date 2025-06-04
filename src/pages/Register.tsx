@@ -15,6 +15,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [cnpj, setCnpj] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -65,21 +66,70 @@ const Register = () => {
 
       console.log('Usuário criado:', authData);
 
-      if (authData.user && !authData.user.email_confirmed_at) {
-        // Email precisa ser confirmado
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Verifique seu email para confirmar a conta antes de fazer login.",
-        });
-        navigate('/login');
-      } else if (authData.user && authData.user.email_confirmed_at) {
-        // Email já confirmado (modo desenvolvimento), redirecionar para dashboard
-        console.log('Email já confirmado, redirecionando para dashboard');
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Bem-vindo ao MKsimplo!"
-        });
-        navigate('/dashboard');
+      if (authData.user) {
+        // Criar registro na tabela stores
+        const { error: storeError } = await supabase
+          .from('stores')
+          .insert({
+            name: storeName,
+            email: email.trim(),
+            owner_name: ownerName,
+            phone: phone || null,
+            cnpj: cnpj || null,
+            plan_type: 'trial',
+            status: 'active',
+            subscription_status: 'trial',
+            trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 dias a partir de agora
+          });
+
+        if (storeError) {
+          console.error('Erro ao criar loja:', storeError);
+          toast({
+            title: "Erro ao criar loja",
+            description: "Usuário criado mas houve problema ao configurar a loja. Entre em contato com o suporte.",
+            variant: "destructive"
+          });
+        } else {
+          console.log('Loja criada com sucesso');
+        }
+
+        // Criar registro na tabela user_stores para associar o usuário à loja
+        const { data: storeData } = await supabase
+          .from('stores')
+          .select('id')
+          .eq('email', email.trim())
+          .single();
+
+        if (storeData) {
+          const { error: userStoreError } = await supabase
+            .from('user_stores')
+            .insert({
+              user_id: authData.user.id,
+              store_id: storeData.id,
+              role: 'owner'
+            });
+
+          if (userStoreError) {
+            console.error('Erro ao associar usuário à loja:', userStoreError);
+          }
+        }
+
+        if (!authData.user.email_confirmed_at) {
+          // Email precisa ser confirmado
+          toast({
+            title: "Conta criada com sucesso!",
+            description: "Verifique seu email para confirmar a conta antes de fazer login.",
+          });
+          navigate('/login');
+        } else {
+          // Email já confirmado (modo desenvolvimento), redirecionar para dashboard
+          console.log('Email já confirmado, redirecionando para dashboard');
+          toast({
+            title: "Conta criada com sucesso!",
+            description: "Bem-vindo ao MKsimplo!"
+          });
+          navigate('/dashboard');
+        }
       } else {
         // Caso padrão - redirecionar para login
         toast({
@@ -161,6 +211,16 @@ const Register = () => {
                   placeholder="(11) 99999-9999"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ (opcional)</Label>
+                <Input
+                  id="cnpj"
+                  placeholder="00.000.000/0001-00"
+                  value={cnpj}
+                  onChange={(e) => setCnpj(e.target.value)}
                 />
               </div>
 
