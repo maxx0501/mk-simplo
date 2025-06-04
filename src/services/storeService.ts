@@ -38,12 +38,13 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     throw new Error('Você já possui uma loja cadastrada.');
   }
 
-  // Tentar criar a loja com dados básicos
+  // Tentar criar a loja com dados básicos incluindo user_id
   console.log('Criando loja na tabela stores...');
   console.log('Dados da loja:', {
     name: storeName.trim(),
     email: user.email || '',
-    owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário'
+    owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
+    user_id: user.id
   });
 
   const { data: storeData, error: storeError } = await supabase
@@ -56,7 +57,8 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
       owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
       plan_type: 'free',
       status: 'active',
-      trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      user_id: user.id
     })
     .select()
     .single();
