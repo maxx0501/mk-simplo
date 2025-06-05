@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,10 +39,10 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
     },
     {
       id: 'pro',
-      name: 'Pro',
-      price: 'R$ 49',
+      name: 'Pro (TESTE)',
+      price: 'R$ 1',
       period: '/mês',
-      description: 'Plano completo para sua loja',
+      description: 'Plano completo para sua loja - PREÇO DE TESTE',
       features: [
         'Acesso ilimitado',
         'Produtos ilimitados',
