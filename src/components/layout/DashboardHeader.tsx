@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu } from 'lucide-react';
+import { Menu, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from '../NotificationDropdown';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,11 +15,14 @@ interface SubscriptionInfo {
 
 export const DashboardHeader = () => {
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
   const navigate = useNavigate();
 
-  const checkSubscription = async () => {
+  const checkSubscription = async (showLoading = false) => {
     try {
+      if (showLoading) setRefreshing(true);
+      
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) return;
 
@@ -29,18 +32,24 @@ export const DashboardHeader = () => {
       }
     } catch (error) {
       console.error('Erro ao verificar assinatura:', error);
+    } finally {
+      if (showLoading) setRefreshing(false);
     }
   };
 
   useEffect(() => {
     checkSubscription();
     // Verificar a cada 30 segundos
-    const interval = setInterval(checkSubscription, 30000);
+    const interval = setInterval(() => checkSubscription(), 30000);
     return () => clearInterval(interval);
   }, []);
 
   const handlePlanClick = () => {
     navigate('/subscription');
+  };
+
+  const handleRefresh = () => {
+    checkSubscription(true);
   };
 
   const getPlanDisplay = () => {
@@ -66,10 +75,10 @@ export const DashboardHeader = () => {
   };
 
   const getPlanColor = () => {
-    if (!subscriptionInfo) return 'text-gray-600 border-gray-600';
+    if (!subscriptionInfo) return 'text-gray-600 border-gray-600 bg-gray-50';
     
     if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'text-purple-600 border-purple-600';
+      return 'text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100';
     }
     
     if (subscriptionInfo.plan_type === 'trial') {
@@ -78,17 +87,19 @@ export const DashboardHeader = () => {
       const remainingDays = trialEnd ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
       
       if (remainingDays > 0) {
-        return remainingDays <= 2 ? 'text-orange-600 border-orange-600' : 'text-green-600 border-green-600';
+        return remainingDays <= 2 
+          ? 'text-orange-700 border-orange-300 bg-orange-50 hover:bg-orange-100' 
+          : 'text-green-700 border-green-300 bg-green-50 hover:bg-green-100';
       } else {
-        return 'text-red-600 border-red-600';
+        return 'text-red-700 border-red-300 bg-red-50 hover:bg-red-100';
       }
     }
     
-    return 'text-blue-600 border-blue-600';
+    return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -98,13 +109,26 @@ export const DashboardHeader = () => {
             <h2 className="text-lg font-semibold text-gray-900">
               {user.store_name || 'Loja Exemplo'}
             </h2>
+            <p className="text-sm text-gray-500">
+              Bem-vindo, {user.email?.split('@')[0]}
+            </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          
           <Badge 
             variant="outline" 
-            className={`${getPlanColor()} cursor-pointer hover:bg-opacity-10 transition-colors`}
+            className={`${getPlanColor()} cursor-pointer transition-all duration-200 font-medium px-3 py-1 border-2`}
             onClick={handlePlanClick}
           >
             {getPlanDisplay()}
