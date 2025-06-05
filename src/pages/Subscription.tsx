@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +53,6 @@ const Subscription = () => {
     try {
       setLoading(true);
       
-      // Verificar se o usuário está autenticado
       const authValid = await checkAuth();
       if (!authValid) return;
 
@@ -83,7 +83,6 @@ const Subscription = () => {
 
   const handleManageSubscription = async () => {
     try {
-      // Verificar se o usuário está autenticado
       const authValid = await checkAuth();
       if (!authValid) return;
 
@@ -120,6 +119,10 @@ const Subscription = () => {
   const getTrialProgress = () => {
     const remainingDays = getRemainingTrialDays();
     return ((7 - remainingDays) / 7) * 100;
+  };
+
+  const isTrialExpired = () => {
+    return subscriptionInfo?.plan_type === 'trial' && getRemainingTrialDays() <= 0;
   };
 
   if (!isAuthenticated) {
@@ -174,18 +177,22 @@ const Subscription = () => {
                   <div className="text-sm text-gray-600">Plano Atual</div>
                   <Badge className={
                     subscriptionInfo.plan_type === 'trial' ? 'bg-yellow-100 text-yellow-800' :
-                    subscriptionInfo.plan_type === 'basic' ? 'bg-blue-100 text-blue-800' :
-                    'bg-purple-100 text-purple-800'
+                    subscriptionInfo.plan_type === 'pro' ? 'bg-purple-100 text-purple-800' :
+                    'bg-gray-100 text-gray-800'
                   }>
                     {subscriptionInfo.plan_type === 'trial' ? 'Período de Teste' :
-                     subscriptionInfo.plan_type === 'basic' ? 'Básico' : 'Premium'}
+                     subscriptionInfo.plan_type === 'pro' ? 'Pro' : 'Desconhecido'}
                   </Badge>
                 </div>
 
                 <div className="space-y-2">
                   <div className="text-sm text-gray-600">Status</div>
-                  <Badge className={subscriptionInfo.subscribed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                    {subscriptionInfo.subscribed ? 'Ativa' : 'Expirada'}
+                  <Badge className={
+                    subscriptionInfo.subscribed && !isTrialExpired() 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }>
+                    {subscriptionInfo.subscribed && !isTrialExpired() ? 'Ativa' : 'Expirada'}
                   </Badge>
                 </div>
 
@@ -216,7 +223,10 @@ const Subscription = () => {
                     <div className="flex items-center space-x-2 mt-3 p-3 bg-orange-50 rounded-lg">
                       <AlertCircle className="w-5 h-5 text-orange-600" />
                       <span className="text-sm text-orange-700">
-                        Seu período de teste expira em breve. Escolha um plano para continuar usando a plataforma.
+                        {isTrialExpired() 
+                          ? 'Seu período de teste expirou. Assine o plano Pro para continuar usando a plataforma.'
+                          : 'Seu período de teste expira em breve. Assine o plano Pro para continuar usando a plataforma.'
+                        }
                       </span>
                     </div>
                   )}
@@ -227,13 +237,13 @@ const Subscription = () => {
         )}
 
         {/* Manage Subscription Button */}
-        {subscriptionInfo?.plan_type !== 'trial' && (
+        {subscriptionInfo?.plan_type === 'pro' && (
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium">Gerenciar Assinatura</h3>
-                  <p className="text-gray-600">Altere seu plano, método de pagamento ou cancele sua assinatura</p>
+                  <p className="text-gray-600">Altere seu método de pagamento ou cancele sua assinatura</p>
                 </div>
                 <Button onClick={handleManageSubscription}>
                   Gerenciar no Stripe

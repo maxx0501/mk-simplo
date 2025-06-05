@@ -249,6 +249,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_valid_access: {
+        Args: { store_id: string }
+        Returns: boolean
+      }
       is_platform_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

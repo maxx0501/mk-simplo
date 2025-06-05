@@ -35,7 +35,6 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     
-    // Use the client with anon key for user validation
     const supabaseAuth = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -97,17 +96,7 @@ serve(async (req) => {
       const subscription = subscriptions.data[0];
       stripeSubscriptionId = subscription.id;
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      
-      // Determinar tipo do plano baseado no preço
-      const priceId = subscription.items.data[0].price.id;
-      const price = await stripe.prices.retrieve(priceId);
-      const amount = price.unit_amount || 0;
-      
-      if (amount <= 3000) {
-        planType = "basic";
-      } else {
-        planType = "premium";
-      }
+      planType = "pro"; // Apenas plano Pro agora
       
       logStep("Active subscription found", { 
         subscriptionId: subscription.id, 

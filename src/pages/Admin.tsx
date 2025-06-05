@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,8 @@ import {
   Crown,
   LogOut,
   Building,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +20,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Store {
   id: string;
@@ -30,6 +41,7 @@ interface Store {
   created_at: string;
   status: string;
   email: string;
+  trial_ends_at?: string;
 }
 
 const Admin = () => {
@@ -38,6 +50,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userValidated, setUserValidated] = useState(false);
+  const [deletingStore, setDeletingStore] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Verificar se é superadmin no carregamento
@@ -156,6 +169,52 @@ const Admin = () => {
     });
   };
 
+  // Função para remover loja
+  const handleDeleteStore = async (storeId: string, storeName: string) => {
+    if (!userValidated) return;
+
+    try {
+      setDeletingStore(storeId);
+      console.log('🗑️ Removendo loja:', storeName);
+
+      // Deletar loja do banco de dados
+      const { error } = await supabase
+        .from('stores')
+        .delete()
+        .eq('id', storeId);
+
+      if (error) {
+        console.error('❌ Erro ao deletar loja:', error);
+        toast({
+          title: "Erro ao remover loja",
+          description: "Não foi possível remover a loja: " + error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Loja removida com sucesso');
+      
+      toast({
+        title: "Loja removida",
+        description: `A loja "${storeName}" foi removida com sucesso.`
+      });
+
+      // Recarregar a lista de lojas
+      await loadStores();
+      
+    } catch (error: any) {
+      console.error('❌ Erro inesperado ao deletar:', error);
+      toast({
+        title: "Erro ao remover loja",
+        description: "Erro inesperado: " + error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingStore(null);
+    }
+  };
+
   // Carregar lojas quando o usuário for validado
   useEffect(() => {
     loadStores();
@@ -164,9 +223,6 @@ const Admin = () => {
   const getPlanLabel = (plan: string) => {
     const labels = {
       trial: 'Período de Teste',
-      free: 'Gratuito',
-      basic: 'Básico',
-      premium: 'Premium',
       pro: 'Pro',
       unknown: 'Desconhecido'
     };
@@ -176,10 +232,7 @@ const Admin = () => {
   const getPlanColor = (plan: string) => {
     const colors = {
       trial: 'bg-yellow-100 text-yellow-800',
-      free: 'bg-gray-100 text-gray-800',
-      basic: 'bg-blue-100 text-blue-800',
-      premium: 'bg-purple-100 text-purple-800',
-      pro: 'bg-green-100 text-green-800',
+      pro: 'bg-purple-100 text-purple-800',
       unknown: 'bg-red-100 text-red-800'
     };
     return colors[plan as keyof typeof colors] || 'bg-gray-100 text-gray-800';
@@ -193,6 +246,18 @@ const Admin = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getTrialStatus = (store: Store) => {
+    if (store.plan_type !== 'trial' || !store.trial_ends_at) return null;
+    
+    const now = new Date();
+    const trialEnd = new Date(store.trial_ends_at);
+    const diffTime = trialEnd.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 0) return 'Expirado';
+    return `${diffDays} dias restantes`;
   };
 
   const handleLogout = async () => {
@@ -218,8 +283,8 @@ const Admin = () => {
     );
   }
 
-  const paidPlans = stores.filter(s => s.plan_type !== 'free' && s.plan_type !== 'trial' && s.plan_type !== 'unknown');
-  const freePlans = stores.filter(s => s.plan_type === 'free' || s.plan_type === 'trial');
+  const proPlans = stores.filter(s => s.plan_type === 'pro');
+  const trialPlans = stores.filter(s => s.plan_type === 'trial');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -252,7 +317,7 @@ const Admin = () => {
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Estatísticas */}
+        {/* Estatísticas atualizadas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
@@ -271,8 +336,8 @@ const Admin = () => {
               <div className="flex items-center">
                 <Store className="h-6 w-6 text-green-600" />
                 <div className="ml-3">
-                  <div className="text-2xl font-bold text-green-600">{paidPlans.length}</div>
-                  <div className="text-sm text-gray-600">Planos Pagos</div>
+                  <div className="text-2xl font-bold text-green-600">{proPlans.length}</div>
+                  <div className="text-sm text-gray-600">Planos Pro</div>
                 </div>
               </div>
             </CardContent>
@@ -283,15 +348,15 @@ const Admin = () => {
               <div className="flex items-center">
                 <Building className="h-6 w-6 text-yellow-600" />
                 <div className="ml-3">
-                  <div className="text-2xl font-bold text-yellow-600">{freePlans.length}</div>
-                  <div className="text-sm text-gray-600">Planos Gratuitos</div>
+                  <div className="text-2xl font-bold text-yellow-600">{trialPlans.length}</div>
+                  <div className="text-sm text-gray-600">Período de Teste</div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Lista de Lojas */}
+        {/* Lista de Lojas com botão de remoção */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -322,8 +387,9 @@ const Admin = () => {
                     <TableHead>Proprietário</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Plano</TableHead>
+                    <TableHead>Status do Teste</TableHead>
                     <TableHead>Data de Criação</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -337,14 +403,51 @@ const Admin = () => {
                           {getPlanLabel(store.plan_type)}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        {store.plan_type === 'trial' ? (
+                          <span className={`text-sm ${
+                            getTrialStatus(store) === 'Expirado' 
+                              ? 'text-red-600 font-medium' 
+                              : 'text-yellow-600'
+                          }`}>
+                            {getTrialStatus(store)}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-500">N/A</span>
+                        )}
+                      </TableCell>
                       <TableCell>{formatDate(store.created_at)}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={store.status === 'active' ? 'default' : 'secondary'}
-                          className={store.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                        >
-                          {store.status === 'active' ? 'Ativo' : store.status === 'unknown' ? 'Desconhecido' : 'Inativo'}
-                        </Badge>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={deletingStore === store.id}
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remover Loja</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover a loja "{store.name}"? 
+                                Esta ação não pode ser desfeita e todos os dados serão perdidos.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteStore(store.id, store.name)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Remover
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -1,63 +1,45 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Package, AlertTriangle, TrendingUp } from 'lucide-react';
-
-interface Notification {
-  id: string;
-  type: 'low_stock' | 'sale' | 'system';
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-}
+import { Bell, AlertTriangle, Clock, CreditCard } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export const NotificationDropdown = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'low_stock',
-      title: 'Estoque Baixo',
-      message: 'Camiseta Básica Preta tem apenas 2 unidades restantes',
-      time: '2 min atrás',
-      read: false
-    },
-    {
-      id: '2',
-      type: 'sale',
-      title: 'Nova Venda',
-      message: 'Venda de R$ 89,90 realizada com sucesso',
-      time: '15 min atrás',
-      read: false
-    },
-    {
-      id: '3',
-      type: 'system',
-      title: 'Período de Teste',
-      message: 'Seu período de teste expira em 5 dias',
-      time: '1 hora atrás',
-      read: true
-    }
-  ]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-  };
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'low_stock':
+      case 'trial_warning':
+      case 'trial_expired':
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      case 'subscription_expired':
+        return <CreditCard className="h-4 w-4 text-red-500" />;
+      case 'access_denied':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'sale':
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
       default:
-        return <Package className="h-4 w-4 text-blue-500" />;
+        return <Clock className="h-4 w-4 text-blue-500" />;
+    }
+  };
+
+  const getNotificationStyle = (type: string, read: boolean) => {
+    const baseStyle = `p-3 rounded-lg border cursor-pointer transition-colors`;
+    
+    if (read) {
+      return `${baseStyle} bg-gray-50 border-gray-200`;
+    }
+    
+    switch (type) {
+      case 'trial_expired':
+      case 'access_denied':
+        return `${baseStyle} bg-red-50 border-red-200 hover:bg-red-100`;
+      case 'trial_warning':
+        return `${baseStyle} bg-orange-50 border-orange-200 hover:bg-orange-100`;
+      case 'subscription_expired':
+        return `${baseStyle} bg-yellow-50 border-yellow-200 hover:bg-yellow-100`;
+      default:
+        return `${baseStyle} bg-blue-50 border-blue-200 hover:bg-blue-100`;
     }
   };
 
@@ -93,11 +75,7 @@ export const NotificationDropdown = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    notification.read 
-                      ? 'bg-gray-50 border-gray-200' 
-                      : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                  }`}
+                  className={getNotificationStyle(notification.type, notification.read)}
                   onClick={() => markAsRead(notification.id)}
                 >
                   <div className="flex items-start space-x-3">
@@ -108,7 +86,7 @@ export const NotificationDropdown = () => {
                           {notification.title}
                         </p>
                         {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                          <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
@@ -129,7 +107,7 @@ export const NotificationDropdown = () => {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                onClick={markAllAsRead}
               >
                 Marcar todas como lidas
               </Button>

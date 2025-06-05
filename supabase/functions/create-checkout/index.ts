@@ -35,7 +35,6 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     
-    // Use the client with anon key for user validation
     const supabaseAuth = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -49,8 +48,10 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { plan_type } = await req.json();
-    if (!plan_type || !['basic', 'premium'].includes(plan_type)) {
-      throw new Error("Invalid plan type. Must be 'basic' or 'premium'");
+    
+    // Apenas 'pro' é permitido agora
+    if (!plan_type || plan_type !== 'pro') {
+      throw new Error("Invalid plan type. Only 'pro' plan is available for purchase");
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
@@ -67,36 +68,28 @@ serve(async (req) => {
       logStep("Created new customer", { customerId });
     }
 
-    // Definir preços baseado no plano
+    // Preço fixo para plano Pro
     const priceData = {
-      basic: {
-        currency: "brl",
-        product_data: { name: "MKsimplo - Plano Básico" },
-        unit_amount: 2900, // R$ 29,00
-        recurring: { interval: "month" },
-      },
-      premium: {
-        currency: "brl",
-        product_data: { name: "MKsimplo - Plano Premium" },
-        unit_amount: 4900, // R$ 49,00
-        recurring: { interval: "month" },
-      }
+      currency: "brl",
+      product_data: { name: "MKsimplo - Plano Pro" },
+      unit_amount: 4900, // R$ 49,00
+      recurring: { interval: "month" },
     };
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
         {
-          price_data: priceData[plan_type as keyof typeof priceData],
+          price_data: priceData,
           quantity: 1,
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/dashboard?success=true`,
-      cancel_url: `${req.headers.get("origin")}/dashboard?canceled=true`,
+      success_url: `${req.headers.get("origin")}/subscription?success=true`,
+      cancel_url: `${req.headers.get("origin")}/subscription?canceled=true`,
       metadata: {
         user_id: user.id,
-        plan_type: plan_type,
+        plan_type: 'pro',
       },
     });
 

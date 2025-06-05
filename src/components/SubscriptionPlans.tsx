@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap } from 'lucide-react';
+import { Check, Crown, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -21,15 +21,17 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
   const plans = [
     {
       id: 'trial',
-      name: 'Teste Grátis',
+      name: 'Período de Teste',
       price: 'R$ 0',
       period: '7 dias',
-      description: 'Perfeito para conhecer a plataforma',
+      description: 'Experimente todas as funcionalidades gratuitamente',
       features: [
-        'Até 50 produtos',
-        'Relatórios básicos',
+        'Acesso completo por 7 dias',
+        'Produtos ilimitados',
+        'Relatórios avançados',
         'Suporte por email',
-        'Dashboard básico'
+        'Dashboard completo',
+        'Controle de estoque'
       ],
       icon: Zap,
       color: 'text-green-600',
@@ -37,43 +39,28 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
       borderColor: 'border-green-200'
     },
     {
-      id: 'basic',
-      name: 'Básico',
-      price: 'R$ 29',
-      period: '/mês',
-      description: 'Ideal para pequenas lojas',
-      features: [
-        'Produtos ilimitados',
-        'Relatórios avançados',
-        'Suporte prioritário',
-        'Dashboard completo',
-        'Controle de estoque',
-        'Gestão de vendas'
-      ],
-      icon: Star,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200'
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
+      id: 'pro',
+      name: 'Pro',
       price: 'R$ 49',
       period: '/mês',
-      description: 'Para lojas em crescimento',
+      description: 'Plano completo para sua loja',
       features: [
-        'Tudo do plano Básico',
+        'Acesso ilimitado',
+        'Produtos ilimitados',
+        'Relatórios avançados',
+        'Suporte prioritário 24/7',
+        'Dashboard completo',
+        'Controle de estoque',
         'Múltiplos usuários',
         'Integrações avançadas',
-        'Suporte 24/7',
-        'Dashboard personalizado',
         'API completa',
         'Backup automático'
       ],
       icon: Crown,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200'
+      borderColor: 'border-purple-200',
+      popular: true
     }
   ];
 
@@ -110,7 +97,6 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
 
     setLoading(planType);
     try {
-      // Verificar autenticação antes de prosseguir
       const authValid = await checkAuth();
       if (!authValid) return;
 
@@ -146,7 +132,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
       {plans.map((plan) => {
         const Icon = plan.icon;
         const isCurrentPlan = currentPlan === plan.id;
@@ -154,10 +140,18 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
         return (
           <Card 
             key={plan.id} 
-            className={`relative ${plan.borderColor} ${isCurrentPlan ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+            className={`relative ${plan.borderColor} ${
+              isCurrentPlan ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+            } ${plan.popular ? 'border-purple-300 shadow-lg' : ''}`}
           >
+            {plan.popular && (
+              <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-purple-600">
+                Mais Popular
+              </Badge>
+            )}
+            
             {isCurrentPlan && (
-              <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-blue-600">
+              <Badge className="absolute -top-2 right-4 bg-blue-600">
                 Plano Atual
               </Badge>
             )}
@@ -185,14 +179,14 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               </ul>
               
               <Button
-                className="w-full"
-                variant={isCurrentPlan ? "secondary" : "default"}
+                className={`w-full ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                variant={isCurrentPlan ? "secondary" : plan.popular ? "default" : "outline"}
                 onClick={() => handleSubscribe(plan.id)}
                 disabled={loading === plan.id || isCurrentPlan}
               >
                 {loading === plan.id ? 'Processando...' : 
                  isCurrentPlan ? 'Plano Ativo' : 
-                 plan.id === 'trial' ? 'Período de Teste' : 'Assinar Agora'}
+                 plan.id === 'trial' ? 'Iniciar Teste' : 'Assinar Agora'}
               </Button>
             </CardContent>
           </Card>
