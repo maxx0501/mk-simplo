@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Zap, Star, Shield } from 'lucide-react';
+import { Check, Crown, Zap, Star, Shield, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -92,6 +92,15 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
 
   const handleSubscribe = async (planType: string) => {
     if (planType === 'trial') {
+      if (currentPlan === 'pro') {
+        toast({
+          title: "Plano não disponível",
+          description: "Você já possui o plano Pro ativo. Não é possível voltar ao período de teste.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       toast({
         title: "Período de teste",
         description: "Você já está no período de teste gratuito!",
@@ -136,20 +145,75 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
     }
   };
 
+  const isButtonDisabled = (planId: string) => {
+    if (loading === planId) return true;
+    if (currentPlan === planId) return true;
+    if (planId === 'trial' && currentPlan === 'pro') return true;
+    return false;
+  };
+
+  const getButtonText = (plan: any) => {
+    if (loading === plan.id) {
+      return (
+        <div className="flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          Processando...
+        </div>
+      );
+    }
+    
+    if (currentPlan === plan.id) {
+      return (
+        <>
+          <Shield className="w-4 h-4 mr-2" />
+          Plano Ativo
+        </>
+      );
+    }
+    
+    if (plan.id === 'trial' && currentPlan === 'pro') {
+      return (
+        <>
+          <Lock className="w-4 h-4 mr-2" />
+          Não Disponível
+        </>
+      );
+    }
+    
+    if (plan.id === 'trial') {
+      return (
+        <>
+          <Zap className="w-4 h-4 mr-2" />
+          Iniciar Teste
+        </>
+      );
+    }
+    
+    return (
+      <>
+        <Star className="w-4 h-4 mr-2" />
+        Assinar Agora
+      </>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       {plans.map((plan) => {
         const Icon = plan.icon;
         const isCurrentPlan = currentPlan === plan.id;
+        const isDisabled = isButtonDisabled(plan.id);
         
         return (
           <Card 
             key={plan.id} 
-            className={`relative ${plan.borderColor} ${plan.bgColor} shadow-lg hover:shadow-xl transition-all duration-300 ${
-              isCurrentPlan ? 'ring-2 ring-offset-2 ring-blue-500 scale-105' : ''
+            className={`relative transition-all duration-300 ${
+              isCurrentPlan 
+                ? `${plan.borderColor} ${plan.bgColor} ring-2 ring-offset-2 ring-blue-500 scale-105 shadow-xl` 
+                : `${plan.borderColor} ${plan.bgColor} shadow-lg hover:shadow-xl`
             } ${plan.popular ? 'border-purple-400 shadow-purple-200' : ''}`}
           >
-            {plan.popular && (
+            {plan.popular && !isCurrentPlan && (
               <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
                 <Star className="w-3 h-3 mr-1" />
                 Mais Popular
@@ -157,7 +221,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
             )}
             
             {isCurrentPlan && (
-              <Badge className="absolute -top-3 right-4 bg-blue-600 text-white shadow-lg">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white shadow-lg">
                 <Shield className="w-3 h-3 mr-1" />
                 Plano Atual
               </Badge>
@@ -198,34 +262,17 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               </ul>
               
               <Button
-                className={`w-full h-12 font-semibold text-base shadow-lg hover:shadow-xl transition-all ${
-                  plan.popular ? plan.buttonColor : plan.buttonColor
-                }`}
-                variant={isCurrentPlan ? "secondary" : "default"}
+                className={`w-full h-12 font-semibold text-base shadow-lg transition-all ${
+                  isDisabled 
+                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                    : isCurrentPlan 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : plan.buttonColor
+                } ${!isDisabled && !isCurrentPlan ? 'hover:shadow-xl' : ''}`}
                 onClick={() => handleSubscribe(plan.id)}
-                disabled={loading === plan.id || isCurrentPlan}
+                disabled={isDisabled}
               >
-                {loading === plan.id ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processando...
-                  </div>
-                ) : isCurrentPlan ? (
-                  <>
-                    <Shield className="w-4 h-4 mr-2" />
-                    Plano Ativo
-                  </>
-                ) : plan.id === 'trial' ? (
-                  <>
-                    <Zap className="w-4 h-4 mr-2" />
-                    Iniciar Teste
-                  </>
-                ) : (
-                  <>
-                    <Star className="w-4 h-4 mr-2" />
-                    Assinar Agora
-                  </>
-                )}
+                {getButtonText(plan)}
               </Button>
             </CardContent>
           </Card>
