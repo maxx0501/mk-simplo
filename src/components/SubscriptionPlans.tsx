@@ -37,7 +37,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
       color: 'text-green-600',
       bgColor: 'bg-gradient-to-br from-green-50 to-green-100',
       borderColor: 'border-green-200',
-      buttonColor: 'bg-green-600 hover:bg-green-700'
+      buttonColor: 'bg-yellow-400 hover:bg-yellow-500 text-black'
     },
     {
       id: 'pro',
@@ -46,7 +46,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
       originalPrice: 'R$ 29,90',
       period: '/mês',
       testPrice: true,
-      description: 'Plano completo para sua loja crescer',
+      description: 'Plano completo para sua empresa crescer',
       features: [
         'Acesso ilimitado',
         'Produtos ilimitados',
@@ -55,15 +55,15 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
         'Dashboard completo',
         'Controle de estoque',
         'Múltiplos usuários',
-        'Catálogo online personalizado',
+        'Sistema personalizado',
         'Exportação de dados',
         'Backup automático'
       ],
       icon: Crown,
-      color: 'text-purple-600',
-      bgColor: 'bg-gradient-to-br from-purple-50 to-purple-100',
-      borderColor: 'border-purple-300',
-      buttonColor: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700',
+      color: 'text-blue-600',
+      bgColor: 'bg-gradient-to-br from-blue-50 to-blue-100',
+      borderColor: 'border-blue-300',
+      buttonColor: 'bg-yellow-400 hover:bg-yellow-500 text-black',
       popular: true
     }
   ];
@@ -156,7 +156,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
     if (loading === plan.id) {
       return (
         <div className="flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
           Processando...
         </div>
       );
@@ -207,14 +207,14 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
         return (
           <Card 
             key={plan.id} 
-            className={`relative transition-all duration-300 ${
+            className={`relative transition-all duration-300 bg-white border-2 ${
               isCurrentPlan 
                 ? `${plan.borderColor} ${plan.bgColor} ring-2 ring-offset-2 ring-blue-500 scale-105 shadow-xl` 
                 : `${plan.borderColor} ${plan.bgColor} shadow-lg hover:shadow-xl`
-            } ${plan.popular ? 'border-purple-400 shadow-purple-200' : ''}`}
+            } ${plan.popular ? 'border-blue-400 shadow-blue-200' : ''}`}
           >
             {plan.popular && !isCurrentPlan && (
-              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white shadow-lg">
                 <Star className="w-3 h-3 mr-1" />
                 Mais Popular
               </Badge>
@@ -231,9 +231,9 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               <div className={`w-16 h-16 ${plan.bgColor} border-2 ${plan.borderColor} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}>
                 <Icon className={`w-8 h-8 ${plan.color}`} />
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-800">{plan.name}</CardTitle>
+              <CardTitle className="text-2xl font-bold text-black">{plan.name}</CardTitle>
               <div className="space-y-2">
-                <div className="text-4xl font-bold text-gray-900">
+                <div className="text-4xl font-bold text-black">
                   {plan.price}
                   <span className="text-lg font-normal text-gray-600">{plan.period}</span>
                 </div>
@@ -251,8 +251,8 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               <p className="text-gray-600 mt-3">{plan.description}</p>
             </CardHeader>
             
-            <CardContent className="pt-0">
-              <ul className="space-y-4 mb-8">
+            <CardContent className="pt-0 flex flex-col h-full">
+              <ul className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start">
                     <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
@@ -262,11 +262,11 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               </ul>
               
               <Button
-                className={`w-full h-12 font-semibold text-base shadow-lg transition-all ${
+                className={`w-full h-12 font-semibold text-base shadow-lg transition-all mt-auto ${
                   isDisabled 
                     ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
                     : isCurrentPlan 
-                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                       : plan.buttonColor
                 } ${!isDisabled && !isCurrentPlan ? 'hover:shadow-xl' : ''}`}
                 onClick={() => handleSubscribe(plan.id)}

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Store, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { DemoCredentials } from '@/components/auth/DemoCredentials';
 import { clearSession } from '@/utils/sessionManager';
 
 const Login = () => {
@@ -13,21 +12,21 @@ const Login = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center mb-8 text-gray-600 hover:text-gray-900">
+        <Link to="/" className="flex items-center mb-8 text-gray-600 hover:text-black">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar ao início
         </Link>
 
-        <Card>
+        <Card className="shadow-lg">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
               <Store className="h-10 w-10 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl">Entrar no MKsimplo</CardTitle>
-            <CardDescription>
-              Acesse sua conta para gerenciar sua loja
+            <CardTitle className="text-2xl text-black">Entrar no MKsimplo</CardTitle>
+            <CardDescription className="text-gray-600">
+              Acesse sua conta para gerenciar seu negócio
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -41,8 +40,6 @@ const Login = () => {
                 </Link>
               </p>
             </div>
-
-            <DemoCredentials />
           </CardContent>
         </Card>
       </div>

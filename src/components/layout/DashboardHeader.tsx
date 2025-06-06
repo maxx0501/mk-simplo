@@ -19,6 +19,17 @@ export const DashboardHeader = () => {
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
   const navigate = useNavigate();
 
+  // Extrair nome do usuário do email ou usar o nome completo se disponível
+  const getUserDisplayName = () => {
+    if (user.full_name) {
+      return user.full_name;
+    }
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Usuário';
+  };
+
   const checkSubscription = async (showLoading = false) => {
     try {
       if (showLoading) setRefreshing(true);
@@ -78,7 +89,7 @@ export const DashboardHeader = () => {
     if (!subscriptionInfo) return 'text-gray-600 border-gray-600 bg-gray-50';
     
     if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'text-purple-700 border-purple-300 bg-purple-50 hover:bg-purple-100';
+      return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
     }
     
     if (subscriptionInfo.plan_type === 'trial') {
@@ -106,11 +117,11 @@ export const DashboardHeader = () => {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="ml-4 md:ml-0">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {user.store_name || 'Loja Exemplo'}
+            <h2 className="text-lg font-semibold text-black">
+              {user.store_name || 'Empresa Exemplo'}
             </h2>
             <p className="text-sm text-gray-500">
-              Bem-vindo, {user.email?.split('@')[0]}
+              Bem-vindo, {getUserDisplayName()}
             </p>
           </div>
         </div>

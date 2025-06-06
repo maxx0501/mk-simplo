@@ -59,23 +59,23 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+      <header className="border-b bg-white shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Store className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-black">
                 MKsimplo
               </h1>
             </div>
             <div className="flex space-x-4">
               <Link to="/login">
-                <Button variant="outline" className="hover:bg-blue-50">Entrar</Button>
+                <Button variant="outline" className="border-black text-black hover:bg-gray-100">Entrar</Button>
               </Link>
               <Button 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all"
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium shadow-lg hover:shadow-xl transition-all"
                 onClick={handleStartFree}
               >
                 Começar grátis
@@ -87,23 +87,22 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 blur-3xl"></div>
         <div className="container mx-auto px-4 text-center relative">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Controle total da sua
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
-                loja de roupas
+            <h2 className="text-5xl md:text-6xl font-bold text-black mb-6 leading-tight">
+              Gerencie seu negócio
+              <span className="text-blue-600 block">
+                de forma simples
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Sistema completo para gestão de estoque, vendas, lucro e catálogo online. 
-              Feito especialmente para lojas de pequeno porte que querem crescer.
+              Sistema completo para gestão de vendas, estoque, controle financeiro e relatórios. 
+              Feito para empresas que querem crescer de forma organizada.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-4 shadow-lg hover:shadow-xl transition-all"
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-lg px-8 py-4 shadow-lg hover:shadow-xl transition-all"
                 onClick={handleStartFree}
               >
                 <Zap className="mr-2 h-5 w-5" />
@@ -120,69 +119,69 @@ const Index = () => {
       </section>
 
       {/* Features */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Tudo que sua loja precisa
+            <h3 className="text-3xl font-bold text-black mb-4">
+              Tudo que seu negócio precisa
             </h3>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Simplifique a gestão da sua loja com ferramentas profissionais e intuitivas
+              Simplifique a gestão da sua empresa com ferramentas profissionais e intuitivas
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-blue-50 to-blue-100">
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
               <CardHeader>
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="h-8 w-8 text-blue-600" />
                 </div>
-                <CardTitle className="text-blue-900">Controle de Estoque</CardTitle>
+                <CardTitle className="text-black">Controle de Estoque</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-blue-700">
-                  Gerencie produtos, entradas e alertas de estoque baixo em tempo real
+                <CardDescription className="text-gray-600">
+                  Gerencie produtos, entradas e saídas com alertas automáticos de estoque baixo
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-green-50 to-green-100">
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
               <CardHeader>
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <BarChart3 className="h-8 w-8 text-green-600" />
                 </div>
-                <CardTitle className="text-green-900">Relatórios de Lucro</CardTitle>
+                <CardTitle className="text-black">Relatórios Financeiros</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-green-700">
-                  Acompanhe vendas e lucro diário, semanal e mensal com gráficos detalhados
+                <CardDescription className="text-gray-600">
+                  Acompanhe vendas, lucros e performance com gráficos detalhados e análises
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-purple-50 to-purple-100">
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
+              <CardHeader>
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Store className="h-8 w-8 text-yellow-600" />
+                </div>
+                <CardTitle className="text-black">Dashboard Completo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600">
+                  Visão geral do seu negócio com métricas importantes em tempo real
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
               <CardHeader>
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Store className="h-8 w-8 text-purple-600" />
+                  <Users className="h-8 w-8 text-purple-600" />
                 </div>
-                <CardTitle className="text-purple-900">Catálogo Online</CardTitle>
+                <CardTitle className="text-black">Gestão de Equipe</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-purple-700">
-                  Sua loja online personalizada com link direto para WhatsApp
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-orange-50 to-orange-100">
-              <CardHeader>
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-orange-600" />
-                </div>
-                <CardTitle className="text-orange-900">Multiusuário</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-orange-700">
-                  Adicione vendedores com permissões específicas para cada função
+                <CardDescription className="text-gray-600">
+                  Adicione funcionários com permissões específicas para cada função
                 </CardDescription>
               </CardContent>
             </Card>
@@ -191,14 +190,14 @@ const Index = () => {
       </section>
 
       {/* Pricing */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
+            <h3 className="text-3xl font-bold text-black mb-4">
               Planos que cabem no seu bolso
             </h3>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Comece grátis e evolua conforme sua loja cresce
+              Comece grátis e evolua conforme sua empresa cresce
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -207,12 +206,12 @@ const Index = () => {
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Zap className="h-6 w-6 text-green-600" />
                 </div>
-                <CardTitle className="text-2xl text-green-900">Período de Teste</CardTitle>
-                <CardDescription className="text-green-700">7 dias grátis para conhecer</CardDescription>
+                <CardTitle className="text-2xl text-black">Período de Teste</CardTitle>
+                <CardDescription className="text-gray-600">7 dias grátis para conhecer</CardDescription>
                 <div className="text-3xl font-bold text-green-600">Grátis</div>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-600 mb-6">
+              <CardContent className="space-y-6">
+                <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
                     <Check className="h-4 w-4 text-green-500 mr-2" />
                     Acesso completo por 7 dias
@@ -231,7 +230,7 @@ const Index = () => {
                   </li>
                 </ul>
                 <Button 
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium"
                   onClick={handleStartFree}
                 >
                   <Zap className="w-4 h-4 mr-2" />
@@ -240,54 +239,54 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-purple-600 relative shadow-xl">
+            <Card className="border-2 border-blue-600 relative shadow-xl">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
+                <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
                   <Star className="w-3 h-3 mr-1" />
                   Recomendado
                 </span>
               </div>
               <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="h-6 w-6 text-purple-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-6 w-6 text-blue-600" />
                 </div>
-                <CardTitle className="text-2xl text-purple-900">Plano Pro</CardTitle>
-                <CardDescription className="text-purple-700">Para fazer sua loja crescer</CardDescription>
-                <div className="text-3xl font-bold text-purple-600">
+                <CardTitle className="text-2xl text-black">Plano Pro</CardTitle>
+                <CardDescription className="text-gray-600">Para fazer sua empresa crescer</CardDescription>
+                <div className="text-3xl font-bold text-blue-600">
                   R$ 1,00<span className="text-lg">/mês</span>
                   <div className="text-sm text-gray-500 line-through">R$ 29,90</div>
-                  <div className="text-xs text-purple-600 font-normal">PREÇO DE TESTE</div>
+                  <div className="text-xs text-blue-600 font-normal">PREÇO DE TESTE</div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-600 mb-6">
+              <CardContent className="space-y-6">
+                <ul className="space-y-3 text-gray-600">
                   <li className="flex items-center">
-                    <Check className="h-4 w-4 text-purple-500 mr-2" />
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
                     Produtos ilimitados
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-4 w-4 text-purple-500 mr-2" />
-                    Catálogo online personalizado
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Dashboard personalizado
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-4 w-4 text-purple-500 mr-2" />
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
                     Relatórios avançados
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-4 w-4 text-purple-500 mr-2" />
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
                     Usuários ilimitados
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-4 w-4 text-purple-500 mr-2" />
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
                     Suporte prioritário 24/7
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-4 w-4 text-purple-500 mr-2" />
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
                     Exportação de dados
                   </li>
                 </ul>
                 <Button 
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg"
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium shadow-lg"
                   onClick={handleSubscribePro}
                 >
                   <Star className="w-4 h-4 mr-2" />
@@ -300,15 +299,15 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
+            <h3 className="text-3xl font-bold text-black mb-4">
               O que nossos clientes dizem
             </h3>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg bg-white">
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
                   <div className="flex text-yellow-400">
@@ -318,14 +317,14 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-gray-600 mb-4">
-                  "O MKsimplo revolucionou minha loja. Agora tenho controle total do estoque e vendas!"
+                  "O MKsimplo revolucionou minha empresa. Agora tenho controle total das vendas e estoque!"
                 </p>
-                <div className="font-medium text-gray-900">Maria Silva</div>
-                <div className="text-sm text-gray-500">Loja Bella Moda</div>
+                <div className="font-medium text-black">Maria Silva</div>
+                <div className="text-sm text-gray-500">Empresa ABC</div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg bg-white">
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
                   <div className="flex text-yellow-400">
@@ -335,14 +334,14 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-gray-600 mb-4">
-                  "Sistema muito fácil de usar. Meus vendedores aprenderam em poucos minutos!"
+                  "Sistema muito fácil de usar. Minha equipe aprendeu em poucos minutos!"
                 </p>
-                <div className="font-medium text-gray-900">João Santos</div>
-                <div className="text-sm text-gray-500">Fashion Store</div>
+                <div className="font-medium text-black">João Santos</div>
+                <div className="text-sm text-gray-500">Comércio XYZ</div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg bg-white">
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
                   <div className="flex text-yellow-400">
@@ -352,10 +351,10 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-gray-600 mb-4">
-                  "Os relatórios me ajudam a tomar decisões mais inteligentes sobre compras e vendas."
+                  "Os relatórios me ajudam a tomar decisões mais inteligentes sobre o negócio."
                 </p>
-                <div className="font-medium text-gray-900">Ana Costa</div>
-                <div className="text-sm text-gray-500">Style Plus</div>
+                <div className="font-medium text-black">Ana Costa</div>
+                <div className="text-sm text-gray-500">Distribuidora 123</div>
               </CardContent>
             </Card>
           </div>
@@ -363,18 +362,18 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-16 bg-black">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto text-white">
             <h3 className="text-3xl font-bold mb-4">
-              Pronto para transformar sua loja?
+              Pronto para transformar seu negócio?
             </h3>
-            <p className="text-xl mb-8 text-blue-100">
-              Junte-se a centenas de lojistas que já usam o MKsimplo para gerenciar suas vendas
+            <p className="text-xl mb-8 text-gray-300">
+              Junte-se a centenas de empresários que já usam o MKsimplo para gerenciar seus negócios
             </p>
             <Button 
               size="lg" 
-              className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4 shadow-lg"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-lg px-8 py-4 shadow-lg"
               onClick={handleStartFree}
             >
               <Zap className="mr-2 h-5 w-5" />
@@ -390,11 +389,11 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Store className="h-6 w-6 text-blue-400" />
+                <Store className="h-6 w-6 text-yellow-400" />
                 <span className="text-lg font-bold">MKsimplo</span>
               </div>
               <p className="text-gray-400">
-                A solução completa para gestão de lojas de roupas
+                A solução completa para gestão empresarial
               </p>
             </div>
             <div>
