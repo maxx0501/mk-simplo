@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,9 +33,9 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
         'Controle de estoque'
       ],
       icon: Zap,
-      color: 'text-green-600',
-      bgColor: 'bg-gradient-to-br from-green-50 to-green-100',
-      borderColor: 'border-green-200',
+      color: 'text-yellow-600',
+      bgColor: 'bg-gradient-to-br from-yellow-50 to-yellow-100',
+      borderColor: 'border-yellow-300',
       buttonColor: 'bg-yellow-400 hover:bg-yellow-500 text-black'
     },
     {
@@ -198,7 +197,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto p-6">
       {plans.map((plan) => {
         const Icon = plan.icon;
         const isCurrentPlan = currentPlan === plan.id;
@@ -207,10 +206,10 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
         return (
           <Card 
             key={plan.id} 
-            className={`relative transition-all duration-300 bg-white border-2 ${
+            className={`relative transition-all duration-300 h-full flex flex-col bg-white border-2 shadow-lg hover:shadow-xl ${
               isCurrentPlan 
-                ? `${plan.borderColor} ${plan.bgColor} ring-2 ring-offset-2 ring-blue-500 scale-105 shadow-xl` 
-                : `${plan.borderColor} ${plan.bgColor} shadow-lg hover:shadow-xl`
+                ? `${plan.borderColor} ${plan.bgColor} ring-2 ring-offset-2 ring-blue-500 scale-105` 
+                : `${plan.borderColor} ${plan.bgColor}`
             } ${plan.popular ? 'border-blue-400 shadow-blue-200' : ''}`}
           >
             {plan.popular && !isCurrentPlan && (
@@ -251,7 +250,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               <p className="text-gray-600 mt-3">{plan.description}</p>
             </CardHeader>
             
-            <CardContent className="pt-0 flex flex-col h-full">
+            <CardContent className="flex-1 flex flex-col">
               <ul className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start">
@@ -262,7 +261,7 @@ const SubscriptionPlans = ({ currentPlan, onPlanChange }: SubscriptionPlansProps
               </ul>
               
               <Button
-                className={`w-full h-12 font-semibold text-base shadow-lg transition-all mt-auto ${
+                className={`w-full h-12 font-semibold text-base shadow-lg transition-all ${
                   isDisabled 
                     ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
                     : isCurrentPlan 

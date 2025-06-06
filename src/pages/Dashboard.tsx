@@ -1,165 +1,212 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Package, TrendingUp, AlertTriangle, DollarSign } from 'lucide-react';
-import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  BarChart3, 
+  Package, 
+  Users, 
+  ShoppingCart,
+  TrendingUp,
+  DollarSign,
+  Eye,
+  Plus
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-    setUser(userData);
-  }, []);
+  const stats = [
+    {
+      title: 'Total de Produtos',
+      value: '156',
+      change: '+12%',
+      changeType: 'positive' as const,
+      icon: Package,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Vendas do Mês',
+      value: 'R$ 2.450',
+      change: '+18%',
+      changeType: 'positive' as const,
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'Pedidos Hoje',
+      value: '23',
+      change: '+5%',
+      changeType: 'positive' as const,
+      icon: ShoppingCart,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50'
+    },
+    {
+      title: 'Usuários Ativos',
+      value: '45',
+      change: '+8%',
+      changeType: 'positive' as const,
+      icon: Users,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    }
+  ];
 
-  // Dados vazios - sistema limpo
-  const stats = {
-    totalProducts: 0,
-    lowStockProducts: 0,
-    todaySales: 0,
-    todayProfit: 0.00
-  };
-
-  // Se o usuário não tem loja, mostrar opções de acesso
-  if (!user?.store_id) {
-    return (
-      <DashboardLayout>
-        <StoreAccessOptions />
-      </DashboardLayout>
-    );
-  }
+  const quickActions = [
+    {
+      title: 'Adicionar Produto',
+      description: 'Cadastre um novo produto no estoque',
+      icon: Plus,
+      action: () => navigate('/products'),
+      color: 'bg-blue-600 hover:bg-blue-700'
+    },
+    {
+      title: 'Ver Relatórios',
+      description: 'Analise o desempenho do seu negócio',
+      icon: BarChart3,
+      action: () => navigate('/reports'),
+      color: 'bg-green-600 hover:bg-green-700'
+    },
+    {
+      title: 'Gerenciar Vendas',
+      description: 'Acompanhe e gerencie suas vendas',
+      icon: ShoppingCart,
+      action: () => navigate('/sales'),
+      color: 'bg-yellow-600 hover:bg-yellow-700'
+    },
+    {
+      title: 'Ver Estoque',
+      description: 'Monitore seu inventário atual',
+      icon: Eye,
+      action: () => navigate('/inventory'),
+      color: 'bg-purple-600 hover:bg-purple-700'
+    }
+  ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Visão geral da sua loja</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-              <Package className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                cadastrados no sistema
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.lowStockProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                produtos precisam reposição
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vendas Hoje</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.todaySales}</div>
-              <p className="text-xs text-muted-foreground">
-                itens vendidos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Lucro Hoje</CardTitle>
-              <DollarSign className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                R$ {stats.todayProfit.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                sem vendas hoje
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Empty States */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Low Stock Alert - Empty */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <AlertTriangle className="h-5 w-5 text-gray-400 mr-2" />
-                Produtos com Estoque Baixo
-              </CardTitle>
-              <CardDescription>
-                Produtos que precisam de reposição urgente
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-sm">Nenhum produto com estoque baixo</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Cadastre produtos para monitorar o estoque
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Sales - Empty */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendas Recentes</CardTitle>
-              <CardDescription>
-                Últimas vendas realizadas hoje
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-sm">Nenhuma venda hoje</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  As vendas aparecerão aqui quando realizadas
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Plan Status */}
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-blue-800">Status do Plano</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-blue-800">Plano Gratuito</p>
-                <p className="text-sm text-blue-600">
-                  {stats.totalProducts}/30 produtos utilizados
-                </p>
-              </div>
-              <Badge className="bg-blue-600">
-                Assinar Plano Pro
-              </Badge>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-6 space-y-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <div>
+              <h1 className="text-4xl font-bold text-black">Dashboard</h1>
+              <p className="text-gray-600 mt-2 text-lg">Bem-vindo ao seu painel de controle</p>
             </div>
-          </CardContent>
-        </Card>
+            <Button 
+              onClick={() => navigate('/products')}
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Produto
+            </Button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="shadow-lg border-0 bg-white hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                        <p className="text-3xl font-bold text-black mt-2">{stat.value}</p>
+                        <div className="flex items-center mt-2">
+                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                          <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+                        </div>
+                      </div>
+                      <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                        <Icon className={`w-6 h-6 ${stat.color}`} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Quick Actions */}
+          <Card className="shadow-lg border-0 bg-white">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
+              <CardTitle className="text-black text-2xl">Ações Rápidas</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <Button
+                      key={index}
+                      onClick={action.action}
+                      className={`${action.color} text-white h-auto p-4 flex flex-col items-center space-y-2 hover:shadow-lg transition-all`}
+                    >
+                      <Icon className="w-8 h-8" />
+                      <div className="text-center">
+                        <p className="font-semibold">{action.title}</p>
+                        <p className="text-xs opacity-90">{action.description}</p>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
+                <CardTitle className="text-black">Vendas Recentes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {[1, 2, 3].map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-black">Produto #{index + 1}</p>
+                        <p className="text-sm text-gray-600">Cliente Exemplo</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-black">R$ {(Math.random() * 200 + 50).toFixed(2)}</p>
+                        <p className="text-xs text-gray-500">Hoje</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-yellow-50 to-yellow-100">
+                <CardTitle className="text-black">Produtos em Baixa</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {[1, 2, 3].map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-black">Produto #{index + 4}</p>
+                        <p className="text-sm text-gray-600">SKU: PRD00{index + 4}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-red-600">{Math.floor(Math.random() * 10 + 1)} unidades</p>
+                        <p className="text-xs text-gray-500">Restantes</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
