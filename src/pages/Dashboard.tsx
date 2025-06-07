@@ -4,14 +4,13 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  BarChart3, 
   Package, 
-  Users, 
   ShoppingCart,
-  TrendingUp,
   DollarSign,
-  Eye,
-  Plus
+  Users,
+  Plus,
+  BarChart3,
+  Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,36 +20,28 @@ const Dashboard = () => {
   const stats = [
     {
       title: 'Total de Produtos',
-      value: '156',
-      change: '+12%',
-      changeType: 'positive' as const,
+      value: '0',
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
       title: 'Vendas do Mês',
-      value: 'R$ 2.450',
-      change: '+18%',
-      changeType: 'positive' as const,
+      value: 'R$ 0,00',
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Pedidos Hoje',
-      value: '23',
-      change: '+5%',
-      changeType: 'positive' as const,
+      title: 'Vendas Hoje',
+      value: '0',
       icon: ShoppingCart,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50'
     },
     {
       title: 'Vendedores Ativos',
-      value: '4',
-      change: '+2',
-      changeType: 'positive' as const,
+      value: '0',
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
@@ -63,7 +54,7 @@ const Dashboard = () => {
       description: 'Cadastre um novo produto no estoque',
       icon: Plus,
       action: () => navigate('/products'),
-      color: 'bg-blue-600 hover:bg-blue-700'
+      color: 'bg-yellow-600 hover:bg-yellow-700'
     },
     {
       title: 'Gerenciar Vendedores',
@@ -80,10 +71,10 @@ const Dashboard = () => {
       color: 'bg-orange-600 hover:bg-orange-700'
     },
     {
-      title: 'Ver Estoque',
-      description: 'Monitore seu inventário atual',
-      icon: Eye,
-      action: () => navigate('/inventory'),
+      title: 'Registrar Venda',
+      description: 'Registre uma nova venda',
+      icon: ShoppingCart,
+      action: () => navigate('/sales'),
       color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
@@ -99,7 +90,7 @@ const Dashboard = () => {
           </div>
           <Button 
             onClick={() => navigate('/products')}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-yellow-600 hover:bg-yellow-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Produto
@@ -115,15 +106,11 @@ const Dashboard = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-2">{stat.title}</p>
-                      <p className="text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
-                      <div className="flex items-center">
-                        <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                        <span className="text-sm text-green-600 font-medium">{stat.change}</span>
-                      </div>
+                      <p className="text-sm font-medium text-gray-600 mb-3">{stat.title}</p>
+                      <p className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</p>
                     </div>
-                    <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center flex-shrink-0 ml-4`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                    <div className={`w-14 h-14 ${stat.bgColor} rounded-lg flex items-center justify-center flex-shrink-0 ml-4`}>
+                      <Icon className={`w-7 h-7 ${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -134,7 +121,7 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <Card className="bg-white border border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
+          <CardHeader className="bg-gray-50 border-b border-gray-200 px-6 py-4">
             <CardTitle className="text-xl text-gray-900">Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -159,53 +146,40 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
+        {/* Empty State Messages */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-white border border-gray-200">
-            <CardHeader className="bg-green-50 border-b border-green-100">
+            <CardHeader className="bg-green-50 border-b border-green-100 px-6 py-4">
               <CardTitle className="text-lg text-gray-900">Vendas Recentes</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                {[1, 2, 3].map((_, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">Produto #{index + 1}</p>
-                      <p className="text-sm text-gray-600 mt-1">Vendedor: João Silva</p>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="font-semibold text-green-600">R$ {(Math.random() * 200 + 50).toFixed(2)}</p>
-                      <p className="text-xs text-gray-500 mt-1">Hoje, 14:30</p>
-                    </div>
-                  </div>
-                ))}
-                {[1, 2, 3].length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">Nenhuma venda registrada hoje</p>
-                  </div>
-                )}
+              <div className="text-center py-8">
+                <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Nenhuma venda registrada ainda</p>
+                <Button 
+                  onClick={() => navigate('/sales')} 
+                  className="mt-4 bg-green-600 hover:bg-green-700"
+                >
+                  Registrar Primeira Venda
+                </Button>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-white border border-gray-200">
-            <CardHeader className="bg-orange-50 border-b border-orange-100">
-              <CardTitle className="text-lg text-gray-900">Produtos em Baixa</CardTitle>
+            <CardHeader className="bg-orange-50 border-b border-orange-100 px-6 py-4">
+              <CardTitle className="text-lg text-gray-900">Produtos em Estoque</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                {[1, 2, 3].map((_, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">Produto #{index + 4}</p>
-                      <p className="text-sm text-gray-600 mt-1">SKU: PRD00{index + 4}</p>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="font-semibold text-red-600">{Math.floor(Math.random() * 10 + 1)} unidades</p>
-                      <p className="text-xs text-gray-500 mt-1">Restantes</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Nenhum produto cadastrado ainda</p>
+                <Button 
+                  onClick={() => navigate('/products')} 
+                  className="mt-4 bg-orange-600 hover:bg-orange-700"
+                >
+                  Adicionar Primeiro Produto
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from '../NotificationDropdown';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubscriptionInfo {
   subscribed: boolean;
@@ -18,16 +19,27 @@ export const DashboardHeader = () => {
   const [refreshing, setRefreshing] = useState(false);
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Extrair nome do usuário do email ou usar o nome completo se disponível
   const getUserDisplayName = () => {
     if (user.full_name) {
       return user.full_name;
     }
     if (user.email) {
-      return user.email.split('@')[0];
+      const emailName = user.email.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
     }
     return 'Usuário';
+  };
+
+  const copyStoreId = () => {
+    if (user.store_id) {
+      navigator.clipboard.writeText(user.store_id);
+      toast({
+        title: "ID copiado!",
+        description: "ID da loja copiado para a área de transferência"
+      });
+    }
   };
 
   const checkSubscription = async (showLoading = false) => {
@@ -50,7 +62,6 @@ export const DashboardHeader = () => {
 
   useEffect(() => {
     checkSubscription();
-    // Verificar a cada 30 segundos
     const interval = setInterval(() => checkSubscription(), 30000);
     return () => clearInterval(interval);
   }, []);
@@ -89,7 +100,7 @@ export const DashboardHeader = () => {
     if (!subscriptionInfo) return 'text-gray-600 border-gray-600 bg-gray-50';
     
     if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
+      return 'text-yellow-700 border-yellow-300 bg-yellow-50 hover:bg-yellow-100';
     }
     
     if (subscriptionInfo.plan_type === 'trial') {
@@ -106,7 +117,7 @@ export const DashboardHeader = () => {
       }
     }
     
-    return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
+    return 'text-yellow-700 border-yellow-300 bg-yellow-50 hover:bg-yellow-100';
   };
 
   return (
@@ -123,6 +134,20 @@ export const DashboardHeader = () => {
             <p className="text-sm text-gray-500">
               Bem-vindo, {getUserDisplayName()}
             </p>
+            {user.store_id && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-gray-500">ID da Loja:</span>
+                <code className="text-xs bg-gray-100 px-2 py-1 rounded">{user.store_id.slice(0, 8)}...</code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyStoreId}
+                  className="h-6 w-6 p-0"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

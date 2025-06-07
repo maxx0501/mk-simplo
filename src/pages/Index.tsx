@@ -72,13 +72,13 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-amber-100">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Store className="h-8 w-8 text-blue-600" />
+              <Store className="h-8 w-8 text-yellow-600" />
               <span className="ml-2 text-2xl font-bold text-gray-900">MK Simplo</span>
             </div>
             <div className="flex space-x-4">
@@ -89,7 +89,7 @@ const Index = () => {
               <Button variant="outline" onClick={() => navigate('/login')}>
                 Entrar
               </Button>
-              <Button onClick={() => navigate('/register')} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => navigate('/register')} className="bg-yellow-600 hover:bg-yellow-700">
                 Começar Grátis
               </Button>
             </div>
@@ -103,17 +103,17 @@ const Index = () => {
           <div className="text-center">
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
               Controle Total do Seu
-              <span className="text-blue-600"> Negócio</span>
+              <span className="text-yellow-600"> Negócio</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
               Gerencie vendas, estoque, equipe e relatórios em uma plataforma simples e poderosa.
               Comece seu período de teste gratuito hoje mesmo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
                 size="lg" 
                 onClick={() => navigate('/register')}
-                className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4"
+                className="bg-yellow-600 hover:bg-yellow-700 text-lg px-8 py-4"
               >
                 Começar Período de Teste
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -150,8 +150,8 @@ const Index = () => {
               return (
                 <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                   <CardContent className="pt-8 pb-6">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icon className="w-8 h-8 text-blue-600" />
+                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Icon className="w-8 h-8 text-yellow-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
                     <p className="text-gray-600">{feature.description}</p>
@@ -177,10 +177,10 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {plans.map((plan, index) => (
-              <Card key={index} className={`relative ${plan.popular ? 'ring-2 ring-blue-500 shadow-xl' : 'shadow-lg'}`}>
+              <Card key={index} className={`relative ${plan.popular ? 'ring-2 ring-yellow-500 shadow-xl' : 'shadow-lg'}`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center">
+                    <span className="bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center">
                       <Star className="w-4 h-4 mr-1" />
                       Mais Popular
                     </span>
@@ -203,7 +203,7 @@ const Index = () => {
                     ))}
                   </ul>
                   <Button 
-                    className={`w-full py-3 ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-900 hover:bg-gray-800'}`}
+                    className={`w-full py-3 ${plan.popular ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-gray-900 hover:bg-gray-800'}`}
                     onClick={plan.action}
                   >
                     {plan.name === 'Período de Teste' ? 'Começar Teste Grátis' : 'Escolher Plano Pro'}
@@ -216,18 +216,18 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-yellow-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
             Pronto para revolucionar seu negócio?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-yellow-100 mb-8">
             Junte-se a centenas de empresários que já escolheram o MK Simplo
           </p>
           <Button 
             size="lg" 
             onClick={() => navigate('/register')}
-            className="bg-white text-blue-600 hover:bg-gray-50 text-lg px-8 py-4"
+            className="bg-white text-yellow-600 hover:bg-gray-50 text-lg px-8 py-4"
           >
             Começar Agora - 7 Dias Grátis
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -240,7 +240,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
-              <Store className="h-8 w-8 text-blue-400" />
+              <Store className="h-8 w-8 text-yellow-400" />
               <span className="ml-2 text-2xl font-bold">MK Simplo</span>
             </div>
             <div className="text-gray-400">

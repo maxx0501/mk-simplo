@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Store, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const EmployeeLogin = () => {
   const [formData, setFormData] = useState({
@@ -34,22 +35,38 @@ const EmployeeLogin = () => {
     setLoading(true);
 
     try {
-      // Simular autenticação por enquanto - implementar com Supabase function depois
-      // Por ora, vamos simular um login bem-sucedido
-      const employeeData = {
-        id: 'temp-employee-id',
-        name: 'Vendedor Teste',
+      const { data, error } = await supabase.rpc('authenticate_employee', {
+        store_id_param: formData.storeId,
+        login_param: formData.login,
+        password_param: formData.password
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "Credenciais inválidas",
+          description: "Verifique ID da loja, login e senha",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const employeeData = data[0];
+      const employeeInfo = {
+        id: employeeData.employee_id,
+        name: employeeData.employee_name,
         login: formData.login,
         store_id: formData.storeId,
-        store_name: 'Loja Teste',
+        store_name: employeeData.store_name,
         role: 'employee'
       };
 
-      localStorage.setItem('mksimplo_employee', JSON.stringify(employeeData));
+      localStorage.setItem('mksimplo_employee', JSON.stringify(employeeInfo));
       
       toast({
         title: "Login realizado com sucesso",
-        description: `Bem-vindo, ${employeeData.name}!`
+        description: `Bem-vindo, ${employeeData.employee_name}!`
       });
 
       navigate('/employee-sales');
@@ -57,7 +74,7 @@ const EmployeeLogin = () => {
       console.error('Erro no login:', error);
       toast({
         title: "Erro no login",
-        description: "Verifique suas credenciais e tente novamente",
+        description: error.message || "Verifique suas credenciais",
         variant: "destructive"
       });
     } finally {
@@ -66,10 +83,10 @@ const EmployeeLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-white shadow-xl">
         <CardHeader className="text-center pb-6">
-          <div className="mx-auto mb-4 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
+          <div className="mx-auto mb-4 w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center">
             <Store className="w-8 h-8 text-white" />
           </div>
           <CardTitle className="text-2xl text-gray-900">Login de Vendedor</CardTitle>
@@ -130,7 +147,7 @@ const EmployeeLogin = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-yellow-600 hover:bg-yellow-700"
               disabled={loading}
             >
               {loading ? 'Entrando...' : 'Entrar'}
@@ -142,7 +159,7 @@ const EmployeeLogin = () => {
               É proprietário de loja?{' '}
               <Button 
                 variant="link" 
-                className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                className="p-0 h-auto text-yellow-600 hover:text-yellow-800"
                 onClick={() => navigate('/login')}
               >
                 Fazer login aqui

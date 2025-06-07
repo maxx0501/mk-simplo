@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart, Package, DollarSign, Calendar, LogOut } from 'lucide-react';
+import { ShoppingCart, Package, DollarSign, LogOut, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Table,
   TableBody,
@@ -48,18 +49,26 @@ const EmployeeSales = () => {
   }, []);
 
   const loadSales = async () => {
-    // Por enquanto, usar dados mockados
-    // Implementar com Supabase depois
-    const mockSales = [
-      {
-        id: '1',
-        product_name: 'Produto A',
-        product_value: 150.00,
-        sale_date: new Date().toISOString(),
-        notes: 'Venda à vista'
-      }
-    ];
-    setSales(mockSales);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('employee_id', employeeData.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSales(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar vendas:', error);
+      toast({
+        title: "Erro ao carregar vendas",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,16 +96,21 @@ const EmployeeSales = () => {
     setSubmitting(true);
 
     try {
-      // Simular criação de venda
-      const newSaleRecord = {
-        id: Date.now().toString(),
+      const saleData = {
+        store_id: employeeData.store_id,
+        employee_id: employeeData.id,
+        employee_name: employeeData.name,
         product_name: newSale.product_name,
         product_value: value,
-        sale_date: new Date().toISOString(),
-        notes: newSale.notes
+        notes: newSale.notes || null,
+        sale_date: new Date().toISOString()
       };
 
-      setSales(prev => [newSaleRecord, ...prev]);
+      const { error } = await supabase
+        .from('sales')
+        .insert([saleData]);
+
+      if (error) throw error;
       
       toast({
         title: "Venda registrada com sucesso",
@@ -104,6 +118,7 @@ const EmployeeSales = () => {
       });
 
       setNewSale({ product_name: '', product_value: '', notes: '' });
+      loadSales();
     } catch (error: any) {
       console.error('Erro:', error);
       toast({
@@ -125,6 +140,14 @@ const EmployeeSales = () => {
     navigate('/employee-login');
   };
 
+  const copyStoreId = () => {
+    navigator.clipboard.writeText(employeeData.store_id);
+    toast({
+      title: "ID copiado!",
+      description: "ID da loja copiado para a área de transferência"
+    });
+  };
+
   const totalSales = sales.reduce((sum, sale) => sum + sale.product_value, 0);
 
   return (
@@ -134,12 +157,24 @@ const EmployeeSales = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <ShoppingCart className="h-8 w-8 text-blue-600 mr-3" />
+              <ShoppingCart className="h-8 w-8 text-yellow-600 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Sistema de Vendas</h1>
                 <p className="text-sm text-gray-600">
                   {employeeData.name} - {employeeData.store_name}
                 </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-500">ID da Loja:</span>
+                  <code className="text-xs bg-gray-100 px-2 py-1 rounded">{employeeData.store_id?.slice(0, 8)}...</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyStoreId}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             </div>
             <Button 
@@ -203,7 +238,7 @@ const EmployeeSales = () => {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full bg-yellow-600 hover:bg-yellow-700"
                     disabled={submitting}
                   >
                     {submitting ? 'Registrando...' : 'Registrar Venda'}
@@ -244,10 +279,14 @@ const EmployeeSales = () => {
           <div className="lg:col-span-2">
             <Card className="bg-white shadow-sm">
               <CardHeader>
-                <CardTitle className="text-xl text-gray-900">Vendas Registradas</CardTitle>
+                <CardTitle className="text-xl text-gray-900">Minhas Vendas</CardTitle>
               </CardHeader>
               <CardContent>
-                {sales.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Carregando vendas...</p>
+                  </div>
+                ) : sales.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma venda registrada</h3>
