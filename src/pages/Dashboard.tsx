@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,39 +9,103 @@ import {
   DollarSign,
   Users,
   Plus,
-  BarChart3,
-  Eye
+  BarChart3
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    monthSales: 0,
+    todaySales: 0,
+    activeEmployees: 0
+  });
 
-  const stats = [
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
+    if (userData?.store_id) {
+      loadStats(userData.store_id);
+    }
+  }, []);
+
+  const loadStats = async (storeId: string) => {
+    try {
+      // Carregar produtos
+      const { data: products } = await supabase
+        .from('products')
+        .select('id')
+        .eq('store_id', storeId);
+
+      // Carregar vendas do mês
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data: monthSalesData } = await supabase
+        .from('sales')
+        .select('product_value')
+        .eq('store_id', storeId)
+        .gte('sale_date', startOfMonth.toISOString());
+
+      // Carregar vendas de hoje
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data: todaySalesData } = await supabase
+        .from('sales')
+        .select('id')
+        .eq('store_id', storeId)
+        .gte('sale_date', today.toISOString());
+
+      // Carregar funcionários
+      const { data: employees } = await supabase
+        .from('store_employees')
+        .select('id')
+        .eq('store_id', storeId);
+
+      const monthSalesTotal = monthSalesData?.reduce((sum, sale) => sum + Number(sale.product_value), 0) || 0;
+
+      setStats({
+        totalProducts: products?.length || 0,
+        monthSales: monthSalesTotal,
+        todaySales: todaySalesData?.length || 0,
+        activeEmployees: employees?.length || 0
+      });
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+    }
+  };
+
+  const statsData = [
     {
       title: 'Total de Produtos',
-      value: '0',
+      value: stats.totalProducts.toString(),
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
       title: 'Vendas do Mês',
-      value: 'R$ 0,00',
+      value: `R$ ${stats.monthSales.toFixed(2)}`,
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
       title: 'Vendas Hoje',
-      value: '0',
+      value: stats.todaySales.toString(),
       icon: ShoppingCart,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50'
     },
     {
       title: 'Vendedores Ativos',
-      value: '0',
+      value: stats.activeEmployees.toString(),
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
@@ -79,6 +143,14 @@ const Dashboard = () => {
     }
   ];
 
+  if (!user?.store_id) {
+    return (
+      <DashboardLayout>
+        <StoreAccessOptions />
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -99,7 +171,7 @@ const Dashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
+          {statsData.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card key={index} className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
@@ -146,23 +218,35 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Empty State Messages */}
+        {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-white border border-gray-200">
             <CardHeader className="bg-green-50 border-b border-green-100 px-6 py-4">
               <CardTitle className="text-lg text-gray-900">Vendas Recentes</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="text-center py-8">
-                <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Nenhuma venda registrada ainda</p>
-                <Button 
-                  onClick={() => navigate('/sales')} 
-                  className="mt-4 bg-green-600 hover:bg-green-700"
-                >
-                  Registrar Primeira Venda
-                </Button>
-              </div>
+              {stats.todaySales === 0 ? (
+                <div className="text-center py-8">
+                  <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">Nenhuma venda registrada hoje</p>
+                  <Button 
+                    onClick={() => navigate('/sales')} 
+                    className="mt-4 bg-green-600 hover:bg-green-700"
+                  >
+                    Registrar Venda
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-lg font-semibold text-green-600">{stats.todaySales} vendas hoje</p>
+                  <Button 
+                    onClick={() => navigate('/sales')} 
+                    className="mt-4 bg-green-600 hover:bg-green-700"
+                  >
+                    Ver Todas as Vendas
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -171,16 +255,28 @@ const Dashboard = () => {
               <CardTitle className="text-lg text-gray-900">Produtos em Estoque</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="text-center py-8">
-                <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Nenhum produto cadastrado ainda</p>
-                <Button 
-                  onClick={() => navigate('/products')} 
-                  className="mt-4 bg-orange-600 hover:bg-orange-700"
-                >
-                  Adicionar Primeiro Produto
-                </Button>
-              </div>
+              {stats.totalProducts === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">Nenhum produto cadastrado ainda</p>
+                  <Button 
+                    onClick={() => navigate('/products')} 
+                    className="mt-4 bg-orange-600 hover:bg-orange-700"
+                  >
+                    Adicionar Primeiro Produto
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-lg font-semibold text-orange-600">{stats.totalProducts} produtos cadastrados</p>
+                  <Button 
+                    onClick={() => navigate('/products')} 
+                    className="mt-4 bg-orange-600 hover:bg-orange-700"
+                  >
+                    Gerenciar Produtos
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

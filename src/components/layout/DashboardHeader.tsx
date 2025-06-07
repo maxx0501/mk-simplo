@@ -27,6 +27,7 @@ export const DashboardHeader = () => {
     }
     if (user.email) {
       const emailName = user.email.split('@')[0];
+      // Capitalizar primeira letra
       return emailName.charAt(0).toUpperCase() + emailName.slice(1);
     }
     return 'Usuário';
@@ -143,6 +144,7 @@ export const DashboardHeader = () => {
                   size="sm"
                   onClick={copyStoreId}
                   className="h-6 w-6 p-0"
+                  title="Copiar ID completo"
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
