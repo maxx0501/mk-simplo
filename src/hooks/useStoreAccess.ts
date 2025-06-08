@@ -1,132 +1,119 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useStoreAccess = () => {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
-  const joinStoreById = async (storeId: string) => {
-    if (!storeId) {
-      toast({
-        title: "ID da loja obrigatório",
-        description: "Digite o ID da loja para continuar",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const joinStore = async (accessCode: string) => {
     setLoading(true);
-
+    
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        toast({
-          title: "Usuário não autenticado",
-          description: "Faça login novamente",
-          variant: "destructive"
-        });
-        return;
+      console.log('🔑 Tentando acessar loja com código:', accessCode);
+
+      // Verificar sessão do usuário
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session?.user) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
       }
 
-      // Verificar se a loja existe
-      const { data: store, error: storeError } = await supabase
+      const user = sessionData.session.user;
+
+      // Buscar loja pelo código de acesso
+      const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('*')
-        .eq('id', storeId)
-        .single();
+        .eq('access_code', accessCode.toUpperCase())
+        .maybeSingle();
 
-      if (storeError || !store) {
-        toast({
-          title: "Loja não encontrada",
-          description: "Verifique o ID da loja e tente novamente",
-          variant: "destructive"
-        });
-        return;
+      if (storeError) {
+        console.error('Erro ao buscar loja:', storeError);
+        throw new Error('Erro ao verificar código de acesso.');
       }
 
-      // Verificar se já está na loja
-      const { data: existingRelation } = await supabase
+      if (!storeData) {
+        throw new Error('Código de acesso inválido. Verifique o código e tente novamente.');
+      }
+
+      // Verificar se o usuário já está associado a esta loja
+      const { data: existingAssociation } = await supabase
         .from('user_stores')
         .select('*')
-        .eq('user_id', authUser.id)
-        .eq('store_id', storeId)
-        .single();
+        .eq('user_id', user.id)
+        .eq('store_id', storeData.id)
+        .maybeSingle();
 
-      if (existingRelation) {
-        // Atualizar dados do usuário
+      if (existingAssociation) {
+        // Usuário já está associado, apenas atualizar localStorage
         const userData = {
-          id: authUser.id,
-          email: authUser.email,
-          role: existingRelation.role,
-          store_id: store.id,
-          store_name: store.name
+          id: user.id,
+          email: user.email,
+          role: existingAssociation.role,
+          store_id: storeData.id,
+          store_name: storeData.name
         };
 
         localStorage.setItem('mksimplo_user', JSON.stringify(userData));
-        
+        window.dispatchEvent(new Event('storage'));
+
         toast({
-          title: "Bem-vindo de volta!",
-          description: `Conectado à loja: ${store.name}`
+          title: "Acesso realizado!",
+          description: `Bem-vindo de volta à ${storeData.name}!`
         });
 
-        navigate('/dashboard');
-        return;
+        return true;
       }
 
-      // Adicionar usuário à loja
-      const { error: relationError } = await supabase
+      // Criar nova associação como funcionário
+      const { error: associationError } = await supabase
         .from('user_stores')
         .insert({
-          user_id: authUser.id,
-          store_id: storeId,
-          role: 'member'
+          user_id: user.id,
+          store_id: storeData.id,
+          role: 'employee'
         });
 
-      if (relationError) {
-        console.error('Erro ao adicionar à loja:', relationError);
-        toast({
-          title: "Erro ao conectar à loja",
-          description: "Tente novamente mais tarde",
-          variant: "destructive"
-        });
-        return;
+      if (associationError) {
+        console.error('Erro ao associar usuário à loja:', associationError);
+        throw new Error('Erro ao associar usuário à loja.');
       }
 
-      // Atualizar dados do usuário
+      // Atualizar localStorage
       const userData = {
-        id: authUser.id,
-        email: authUser.email,
-        role: 'member',
-        store_id: store.id,
-        store_name: store.name
+        id: user.id,
+        email: user.email,
+        role: 'employee',
+        store_id: storeData.id,
+        store_name: storeData.name
       };
 
       localStorage.setItem('mksimplo_user', JSON.stringify(userData));
-      
+      window.dispatchEvent(new Event('storage'));
+
       toast({
-        title: "Conectado à loja!",
-        description: `Bem-vindo à loja: ${store.name}`
+        title: "Acesso realizado com sucesso!",
+        description: `Você agora faz parte da equipe da ${storeData.name}!`
       });
 
-      navigate('/dashboard');
+      console.log('✅ Usuário associado à loja com sucesso');
+      return true;
+
     } catch (error: any) {
-      console.error('Erro:', error);
+      console.error('❌ Erro ao acessar loja:', error);
+      
       toast({
-        title: "Erro inesperado",
-        description: "Tente novamente mais tarde",
+        title: "Erro ao acessar loja",
+        description: error.message || "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive"
       });
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  return {
-    joinStoreById,
-    loading
-  };
+  return { joinStore, loading };
 };

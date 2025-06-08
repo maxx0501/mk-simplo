@@ -1,111 +1,56 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
+  BarChart3, 
   Package, 
+  Users, 
   ShoppingCart,
+  TrendingUp,
   DollarSign,
-  Users,
-  Plus,
-  BarChart3
+  Eye,
+  Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
-import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    monthSales: 0,
-    todaySales: 0,
-    activeEmployees: 0
-  });
 
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-    setUser(userData);
-    if (userData?.store_id) {
-      loadStats(userData.store_id);
-    }
-  }, []);
-
-  const loadStats = async (storeId: string) => {
-    try {
-      // Carregar produtos
-      const { data: products } = await supabase
-        .from('products')
-        .select('id')
-        .eq('store_id', storeId);
-
-      // Carregar vendas do mês
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data: monthSalesData } = await supabase
-        .from('sales')
-        .select('product_value')
-        .eq('store_id', storeId)
-        .gte('sale_date', startOfMonth.toISOString());
-
-      // Carregar vendas de hoje
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const { data: todaySalesData } = await supabase
-        .from('sales')
-        .select('id')
-        .eq('store_id', storeId)
-        .gte('sale_date', today.toISOString());
-
-      // Carregar funcionários
-      const { data: employees } = await supabase
-        .from('store_employees')
-        .select('id')
-        .eq('store_id', storeId);
-
-      const monthSalesTotal = monthSalesData?.reduce((sum, sale) => sum + Number(sale.product_value), 0) || 0;
-
-      setStats({
-        totalProducts: products?.length || 0,
-        monthSales: monthSalesTotal,
-        todaySales: todaySalesData?.length || 0,
-        activeEmployees: employees?.length || 0
-      });
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-    }
-  };
-
-  const statsData = [
+  const stats = [
     {
       title: 'Total de Produtos',
-      value: stats.totalProducts.toString(),
+      value: '156',
+      change: '+12%',
+      changeType: 'positive' as const,
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
       title: 'Vendas do Mês',
-      value: `R$ ${stats.monthSales.toFixed(2)}`,
+      value: 'R$ 2.450',
+      change: '+18%',
+      changeType: 'positive' as const,
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Vendas Hoje',
-      value: stats.todaySales.toString(),
+      title: 'Pedidos Hoje',
+      value: '23',
+      change: '+5%',
+      changeType: 'positive' as const,
       icon: ShoppingCart,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50'
     },
     {
-      title: 'Vendedores Ativos',
-      value: stats.activeEmployees.toString(),
+      title: 'Usuários Ativos',
+      value: '45',
+      change: '+8%',
+      changeType: 'positive' as const,
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
@@ -118,167 +63,149 @@ const Dashboard = () => {
       description: 'Cadastre um novo produto no estoque',
       icon: Plus,
       action: () => navigate('/products'),
-      color: 'bg-yellow-600 hover:bg-yellow-700'
-    },
-    {
-      title: 'Gerenciar Vendedores',
-      description: 'Adicione ou gerencie sua equipe',
-      icon: Users,
-      action: () => navigate('/employees'),
-      color: 'bg-green-600 hover:bg-green-700'
+      color: 'bg-blue-600 hover:bg-blue-700'
     },
     {
       title: 'Ver Relatórios',
       description: 'Analise o desempenho do seu negócio',
       icon: BarChart3,
       action: () => navigate('/reports'),
-      color: 'bg-orange-600 hover:bg-orange-700'
+      color: 'bg-green-600 hover:bg-green-700'
     },
     {
-      title: 'Registrar Venda',
-      description: 'Registre uma nova venda',
+      title: 'Gerenciar Vendas',
+      description: 'Acompanhe e gerencie suas vendas',
       icon: ShoppingCart,
       action: () => navigate('/sales'),
+      color: 'bg-yellow-600 hover:bg-yellow-700'
+    },
+    {
+      title: 'Ver Estoque',
+      description: 'Monitore seu inventário atual',
+      icon: Eye,
+      action: () => navigate('/inventory'),
       color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
 
-  if (!user?.store_id) {
-    return (
-      <DashboardLayout>
-        <StoreAccessOptions />
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-2">Bem-vindo ao seu painel de controle</p>
-          </div>
-          <Button 
-            onClick={() => navigate('/products')}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Produto
-          </Button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statsData.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-3">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</p>
-                    </div>
-                    <div className={`w-14 h-14 ${stat.bgColor} rounded-lg flex items-center justify-center flex-shrink-0 ml-4`}>
-                      <Icon className={`w-7 h-7 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200 px-6 py-4">
-            <CardTitle className="text-xl text-gray-900">Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <Button
-                    key={index}
-                    onClick={action.action}
-                    className={`${action.color} text-white h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-lg transition-all`}
-                  >
-                    <Icon className="w-8 h-8" />
-                    <div className="text-center">
-                      <p className="font-semibold text-sm">{action.title}</p>
-                      <p className="text-xs opacity-90 mt-1">{action.description}</p>
-                    </div>
-                  </Button>
-                );
-              })}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-6 space-y-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <div>
+              <h1 className="text-4xl font-bold text-black">Dashboard</h1>
+              <p className="text-gray-600 mt-2 text-lg">Bem-vindo ao seu painel de controle</p>
             </div>
-          </CardContent>
-        </Card>
+            <Button 
+              onClick={() => navigate('/products')}
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Produto
+            </Button>
+          </div>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="bg-green-50 border-b border-green-100 px-6 py-4">
-              <CardTitle className="text-lg text-gray-900">Vendas Recentes</CardTitle>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="shadow-lg border-0 bg-white hover:shadow-xl transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                        <p className="text-3xl font-bold text-black mt-2">{stat.value}</p>
+                        <div className="flex items-center mt-2">
+                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                          <span className="text-sm text-green-600 font-medium">{stat.change}</span>
+                        </div>
+                      </div>
+                      <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                        <Icon className={`w-6 h-6 ${stat.color}`} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Quick Actions */}
+          <Card className="shadow-lg border-0 bg-white">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
+              <CardTitle className="text-black text-2xl">Ações Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {stats.todaySales === 0 ? (
-                <div className="text-center py-8">
-                  <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500">Nenhuma venda registrada hoje</p>
-                  <Button 
-                    onClick={() => navigate('/sales')} 
-                    className="mt-4 bg-green-600 hover:bg-green-700"
-                  >
-                    Registrar Venda
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-lg font-semibold text-green-600">{stats.todaySales} vendas hoje</p>
-                  <Button 
-                    onClick={() => navigate('/sales')} 
-                    className="mt-4 bg-green-600 hover:bg-green-700"
-                  >
-                    Ver Todas as Vendas
-                  </Button>
-                </div>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <Button
+                      key={index}
+                      onClick={action.action}
+                      className={`${action.color} text-white h-auto p-4 flex flex-col items-center space-y-2 hover:shadow-lg transition-all`}
+                    >
+                      <Icon className="w-8 h-8" />
+                      <div className="text-center">
+                        <p className="font-semibold">{action.title}</p>
+                        <p className="text-xs opacity-90">{action.description}</p>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="bg-orange-50 border-b border-orange-100 px-6 py-4">
-              <CardTitle className="text-lg text-gray-900">Produtos em Estoque</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {stats.totalProducts === 0 ? (
-                <div className="text-center py-8">
-                  <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500">Nenhum produto cadastrado ainda</p>
-                  <Button 
-                    onClick={() => navigate('/products')} 
-                    className="mt-4 bg-orange-600 hover:bg-orange-700"
-                  >
-                    Adicionar Primeiro Produto
-                  </Button>
+          {/* Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
+                <CardTitle className="text-black">Vendas Recentes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {[1, 2, 3].map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-black">Produto #{index + 1}</p>
+                        <p className="text-sm text-gray-600">Cliente Exemplo</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-black">R$ {(Math.random() * 200 + 50).toFixed(2)}</p>
+                        <p className="text-xs text-gray-500">Hoje</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-lg font-semibold text-orange-600">{stats.totalProducts} produtos cadastrados</p>
-                  <Button 
-                    onClick={() => navigate('/products')} 
-                    className="mt-4 bg-orange-600 hover:bg-orange-700"
-                  >
-                    Gerenciar Produtos
-                  </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-yellow-50 to-yellow-100">
+                <CardTitle className="text-black">Produtos em Baixa</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {[1, 2, 3].map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-black">Produto #{index + 4}</p>
+                        <p className="text-sm text-gray-600">SKU: PRD00{index + 4}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-red-600">{Math.floor(Math.random() * 10 + 1)} unidades</p>
+                        <p className="text-xs text-gray-500">Restantes</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </DashboardLayout>

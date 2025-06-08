@@ -1,36 +1,84 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Store, ShoppingCart, BarChart3, Users } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, Store, BarChart3, Users, Package, Check, Star, Zap, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleStartFree = async () => {
+    try {
+      await supabase.auth.signOut();
+      window.location.href = '/register';
+    } catch (error) {
+      console.error('Erro ao limpar sessão:', error);
+      window.location.href = '/register';
+    }
+  };
+
+  const handleSubscribePro = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Login necessário",
+          description: "Você precisa fazer login para assinar um plano",
+          variant: "destructive"
+        });
+        window.location.href = '/login';
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan_type: 'pro' }
+      });
+
+      if (error) {
+        console.error('Erro na função create-checkout:', error);
+        throw error;
+      }
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('URL de checkout não recebida');
+      }
+    } catch (error: any) {
+      console.error('Erro ao criar checkout:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao processar pagamento. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-amber-100">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-yellow-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Store className="h-8 w-8 text-yellow-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">MK Simplo</span>
+      <header className="border-b bg-white shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Store className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-black">
+                MKsimplo
+              </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex space-x-4">
+              <Link to="/login">
+                <Button variant="outline" className="border-black text-black hover:bg-gray-100">Entrar</Button>
+              </Link>
               <Button 
-                variant="outline" 
-                onClick={() => navigate('/login')}
-                className="border-yellow-600 text-yellow-600 hover:bg-yellow-50"
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium shadow-lg hover:shadow-xl transition-all"
+                onClick={handleStartFree}
               >
-                Entrar
-              </Button>
-              <Button 
-                onClick={() => navigate('/register')}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
-              >
-                Registrar
+                Começar grátis
               </Button>
             </div>
           </div>
@@ -38,156 +86,343 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left lg:flex lg:items-center">
-              <div>
-                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                  <span className="block">Gerencie sua</span>
-                  <span className="block text-yellow-600">loja com simplicidade</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                  Sistema completo para gerenciar vendas, produtos, estoque e vendedores. 
-                  Tudo que você precisa para fazer sua loja crescer.
-                </p>
-                <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
-                  <Button 
-                    onClick={() => navigate('/register')}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-8 py-4 text-lg rounded-lg font-semibold"
-                  >
-                    Começar Agora - Grátis
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-              <Card className="w-full bg-white shadow-xl border-yellow-200 lg:self-center">
-                <CardContent className="p-8">
-                  <div className="space-y-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-yellow-100 p-3 rounded-lg">
-                        <ShoppingCart className="h-6 w-6 text-yellow-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Controle de Vendas</h3>
-                        <p className="text-gray-500">Registre e acompanhe todas as vendas</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-yellow-100 p-3 rounded-lg">
-                        <Store className="h-6 w-6 text-yellow-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Gestão de Produtos</h3>
-                        <p className="text-gray-500">Organize seu catálogo e estoque</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-yellow-100 p-3 rounded-lg">
-                        <Users className="h-6 w-6 text-yellow-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Equipe de Vendas</h3>
-                        <p className="text-gray-500">Gerencie vendedores e comissões</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-yellow-100 p-3 rounded-lg">
-                        <BarChart3 className="h-6 w-6 text-yellow-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Relatórios</h3>
-                        <p className="text-gray-500">Analise performance e resultados</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      <section className="py-20 relative overflow-hidden">
+        <div className="container mx-auto px-4 text-center relative">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-5xl md:text-6xl font-bold text-black mb-6 leading-tight">
+              Gerencie seu negócio
+              <span className="text-blue-600 block">
+                de forma simples
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Sistema completo para gestão de vendas, estoque, controle financeiro e relatórios. 
+              Feito para empresas que querem crescer de forma organizada.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg" 
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-lg px-8 py-4 shadow-lg hover:shadow-xl transition-all"
+                onClick={handleStartFree}
+              >
+                <Zap className="mr-2 h-5 w-5" />
+                Começar teste grátis
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <p className="text-sm text-gray-500">
+                <Check className="inline h-4 w-4 text-green-500 mr-1" />
+                7 dias grátis • Sem cartão de crédito
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900">
-              Tudo que você precisa para gerenciar sua loja
-            </h2>
-            <p className="mt-4 text-lg text-gray-500">
-              Funcionalidades completas para pequenos e médios negócios
+      {/* Features */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-black mb-4">
+              Tudo que seu negócio precisa
+            </h3>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Simplifique a gestão da sua empresa com ferramentas profissionais e intuitivas
             </p>
           </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
+              <CardHeader>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package className="h-8 w-8 text-blue-600" />
+                </div>
+                <CardTitle className="text-black">Controle de Estoque</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600">
+                  Gerencie produtos, entradas e saídas com alertas automáticos de estoque baixo
+                </CardDescription>
+              </CardContent>
+            </Card>
 
-          <div className="mt-16">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <Card className="border-yellow-200 hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 text-center">
-                  <div className="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <ShoppingCart className="h-6 w-6 text-yellow-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Vendas Rápidas</h3>
-                  <p className="text-gray-500">Registre vendas de forma rápida e prática, com histórico completo.</p>
-                </CardContent>
-              </Card>
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
+              <CardHeader>
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-green-600" />
+                </div>
+                <CardTitle className="text-black">Relatórios Financeiros</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600">
+                  Acompanhe vendas, lucros e performance com gráficos detalhados e análises
+                </CardDescription>
+              </CardContent>
+            </Card>
 
-              <Card className="border-yellow-200 hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 text-center">
-                  <div className="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Store className="h-6 w-6 text-yellow-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Controle de Estoque</h3>
-                  <p className="text-gray-500">Gerencie produtos, preços e quantidades em estoque.</p>
-                </CardContent>
-              </Card>
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
+              <CardHeader>
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Store className="h-8 w-8 text-yellow-600" />
+                </div>
+                <CardTitle className="text-black">Dashboard Completo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600">
+                  Visão geral do seu negócio com métricas importantes em tempo real
+                </CardDescription>
+              </CardContent>
+            </Card>
 
-              <Card className="border-yellow-200 hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 text-center">
-                  <div className="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Users className="h-6 w-6 text-yellow-600" />
+            <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow bg-white">
+              <CardHeader>
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-purple-600" />
+                </div>
+                <CardTitle className="text-black">Gestão de Equipe</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-600">
+                  Adicione funcionários com permissões específicas para cada função
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-black mb-4">
+              Planos que cabem no seu bolso
+            </h3>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Comece grátis e evolua conforme sua empresa cresce
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="border-2 border-green-200 shadow-lg">
+              <CardHeader className="text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Zap className="h-6 w-6 text-green-600" />
+                </div>
+                <CardTitle className="text-2xl text-black">Período de Teste</CardTitle>
+                <CardDescription className="text-gray-600">7 dias grátis para conhecer</CardDescription>
+                <div className="text-3xl font-bold text-green-600">Grátis</div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ul className="space-y-3 text-gray-600">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-500 mr-2" />
+                    Acesso completo por 7 dias
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-500 mr-2" />
+                    Produtos ilimitados
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-500 mr-2" />
+                    Relatórios básicos
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-green-500 mr-2" />
+                    Suporte por email
+                  </li>
+                </ul>
+                <Button 
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium"
+                  onClick={handleStartFree}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Começar teste grátis
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-blue-600 relative shadow-xl">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
+                  <Star className="w-3 h-3 mr-1" />
+                  Recomendado
+                </span>
+              </div>
+              <CardHeader className="text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-6 w-6 text-blue-600" />
+                </div>
+                <CardTitle className="text-2xl text-black">Plano Pro</CardTitle>
+                <CardDescription className="text-gray-600">Para fazer sua empresa crescer</CardDescription>
+                <div className="text-3xl font-bold text-blue-600">
+                  R$ 1,00<span className="text-lg">/mês</span>
+                  <div className="text-sm text-gray-500 line-through">R$ 29,90</div>
+                  <div className="text-xs text-blue-600 font-normal">PREÇO DE TESTE</div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ul className="space-y-3 text-gray-600">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Produtos ilimitados
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Dashboard personalizado
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Relatórios avançados
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Usuários ilimitados
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Suporte prioritário 24/7
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 text-blue-500 mr-2" />
+                    Exportação de dados
+                  </li>
+                </ul>
+                <Button 
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium shadow-lg"
+                  onClick={handleSubscribePro}
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Assinar Plano Pro
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-black mb-4">
+              O que nossos clientes dizem
+            </h3>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="border-0 shadow-lg bg-white">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Equipe de Vendas</h3>
-                  <p className="text-gray-500">Cadastre vendedores e acompanhe performance individual.</p>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  "O MKsimplo revolucionou minha empresa. Agora tenho controle total das vendas e estoque!"
+                </p>
+                <div className="font-medium text-black">Maria Silva</div>
+                <div className="text-sm text-gray-500">Empresa ABC</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg bg-white">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  "Sistema muito fácil de usar. Minha equipe aprendeu em poucos minutos!"
+                </p>
+                <div className="font-medium text-black">João Santos</div>
+                <div className="text-sm text-gray-500">Comércio XYZ</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg bg-white">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  "Os relatórios me ajudam a tomar decisões mais inteligentes sobre o negócio."
+                </p>
+                <div className="font-medium text-black">Ana Costa</div>
+                <div className="text-sm text-gray-500">Distribuidora 123</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-yellow-600">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-extrabold text-white">
-            Pronto para começar?
-          </h2>
-          <p className="mt-4 text-lg text-yellow-100">
-            Crie sua conta gratuita e comece a gerenciar sua loja hoje mesmo.
-          </p>
-          <div className="mt-8">
+      <section className="py-16 bg-black">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto text-white">
+            <h3 className="text-3xl font-bold mb-4">
+              Pronto para transformar seu negócio?
+            </h3>
+            <p className="text-xl mb-8 text-gray-300">
+              Junte-se a centenas de empresários que já usam o MKsimplo para gerenciar seus negócios
+            </p>
             <Button 
-              onClick={() => navigate('/register')}
-              className="bg-white text-yellow-600 hover:bg-gray-50 px-8 py-4 text-lg rounded-lg font-semibold"
+              size="lg" 
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium text-lg px-8 py-4 shadow-lg"
+              onClick={handleStartFree}
             >
-              Criar Conta Gratuita
+              <Zap className="mr-2 h-5 w-5" />
+              Começar agora grátis
             </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-800 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center">
-            <div className="flex items-center">
-              <Store className="h-6 w-6 text-yellow-400" />
-              <span className="ml-2 text-xl font-bold text-white">MK Simplo</span>
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <Store className="h-6 w-6 text-yellow-400" />
+                <span className="text-lg font-bold">MKsimplo</span>
+              </div>
+              <p className="text-gray-400">
+                A solução completa para gestão empresarial
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Produto</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Funcionalidades</li>
+                <li>Preços</li>
+                <li>Suporte</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Sobre nós</li>
+                <li>Blog</li>
+                <li>Contato</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Privacidade</li>
+                <li>Termos</li>
+                <li>Cookies</li>
+              </ul>
             </div>
           </div>
-          <div className="mt-4 text-center">
-            <p className="text-gray-400">© 2024 MK Simplo. Sistema de gestão para lojas.</p>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 MKsimplo. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

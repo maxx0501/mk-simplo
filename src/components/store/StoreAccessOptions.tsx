@@ -13,7 +13,7 @@ export const StoreAccessOptions = () => {
   const [storeName, setStoreName] = useState('');
   const [accessCode, setAccessCode] = useState('');
   const { createStore, loading: createLoading } = useStoreCreation();
-  const { joinStoreById, loading: joinLoading } = useStoreAccess();
+  const { joinStore, loading: joinLoading } = useStoreAccess();
 
   const loading = createLoading || joinLoading;
 
@@ -31,15 +31,17 @@ export const StoreAccessOptions = () => {
     e.preventDefault();
     if (!accessCode.trim()) return;
     
-    await joinStoreById(accessCode.trim());
-    setAccessCode('');
+    const success = await joinStore(accessCode.trim());
+    if (success) {
+      setAccessCode('');
+    }
   };
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <Store className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+          <Store className="h-12 w-12 text-blue-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Bem-vindo ao MKsimplo!</h1>
           <p className="text-gray-500 mt-2">
             Escolha uma opção para começar a usar o sistema
@@ -51,7 +53,7 @@ export const StoreAccessOptions = () => {
             onClick={() => setActiveTab('create')}
             className={`flex-1 py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'create'
-                ? 'border-yellow-600 text-yellow-600'
+                ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -62,7 +64,7 @@ export const StoreAccessOptions = () => {
             onClick={() => setActiveTab('join')}
             className={`flex-1 py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'join'
-                ? 'border-yellow-600 text-yellow-600'
+                ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -97,7 +99,7 @@ export const StoreAccessOptions = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-yellow-600 hover:bg-yellow-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                   disabled={loading || !storeName.trim()}
                 >
                   {loading ? 'Criando...' : 'Criar Loja'}
@@ -113,20 +115,21 @@ export const StoreAccessOptions = () => {
                 Acessar Loja Existente
               </CardTitle>
               <CardDescription>
-                Use o ID da loja fornecido pelo proprietário
+                Use o código de acesso fornecido pelo dono da loja
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleJoinStore} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="accessCode">ID da Loja *</Label>
+                  <Label htmlFor="accessCode">Código de Acesso *</Label>
                   <Input
                     id="accessCode"
-                    placeholder="ID da loja"
+                    placeholder="Ex: ABC12345"
                     value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value)}
+                    onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
                     required
                     disabled={loading}
+                    maxLength={8}
                   />
                 </div>
                 <Button 
@@ -139,8 +142,8 @@ export const StoreAccessOptions = () => {
               </form>
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  <strong>Precisa do ID da loja?</strong><br />
-                  Peça para o proprietário da loja compartilhar o ID com você.
+                  <strong>Precisa do código de acesso?</strong><br />
+                  Peça para o dono da loja compartilhar o código com você.
                 </p>
               </div>
             </CardContent>
