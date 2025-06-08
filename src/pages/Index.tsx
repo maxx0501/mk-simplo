@@ -89,7 +89,7 @@ const Index = () => {
               <Button variant="outline" onClick={() => navigate('/login')}>
                 Entrar
               </Button>
-              <Button onClick={() => navigate('/register')} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => navigate('/register')} className="bg-yellow-500 hover:bg-yellow-600 text-black">
                 Começar Grátis
               </Button>
             </div>
@@ -122,7 +122,7 @@ const Index = () => {
                 size="lg" 
                 variant="outline"
                 onClick={() => navigate('/employee-login')}
-                className="text-lg px-8 py-4"
+                className="text-lg px-8 py-4 border-yellow-400 text-yellow-600 hover:bg-yellow-50"
               >
                 <UserCheck className="mr-2 h-5 w-5" />
                 Acesso para Vendedores
@@ -177,10 +177,10 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {plans.map((plan, index) => (
-              <Card key={index} className={`relative ${plan.popular ? 'ring-2 ring-blue-500 shadow-xl' : 'shadow-lg'}`}>
+              <Card key={index} className={`relative ${plan.popular ? 'ring-2 ring-yellow-500 shadow-xl' : 'shadow-lg'}`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center">
+                    <span className="bg-yellow-500 text-black px-4 py-2 rounded-full text-sm font-semibold flex items-center">
                       <Star className="w-4 h-4 mr-1" />
                       Mais Popular
                     </span>
@@ -203,7 +203,7 @@ const Index = () => {
                     ))}
                   </ul>
                   <Button 
-                    className={`w-full py-3 ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-900 hover:bg-gray-800'}`}
+                    className={`w-full py-3 ${plan.popular ? 'bg-yellow-500 hover:bg-yellow-600 text-black' : 'bg-gray-900 hover:bg-gray-800'}`}
                     onClick={plan.action}
                   >
                     {plan.name === 'Período de Teste' ? 'Começar Teste Grátis' : 'Escolher Plano Pro'}
@@ -227,7 +227,7 @@ const Index = () => {
           <Button 
             size="lg" 
             onClick={() => navigate('/register')}
-            className="bg-white text-blue-600 hover:bg-gray-50 text-lg px-8 py-4"
+            className="bg-yellow-500 hover:bg-yellow-600 text-black text-lg px-8 py-4"
           >
             Começar Agora - 7 Dias Grátis
             <ArrowRight className="ml-2 h-5 w-5" />

@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Store, Eye, EyeOff } from 'lucide-react';
+import { Store, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const EmployeeLogin = () => {
   const [formData, setFormData] = useState({
-    storeId: '',
+    storeId: localStorage.getItem('mksimplo_employee_store_id') || '',
     login: '',
     password: ''
   });
@@ -34,8 +34,10 @@ const EmployeeLogin = () => {
     setLoading(true);
 
     try {
+      // Salvar o store_id para próximos logins
+      localStorage.setItem('mksimplo_employee_store_id', formData.storeId);
+
       // Simular autenticação por enquanto - implementar com Supabase function depois
-      // Por ora, vamos simular um login bem-sucedido
       const employeeData = {
         id: 'temp-employee-id',
         name: 'Vendedor Teste',
@@ -69,6 +71,14 @@ const EmployeeLogin = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-white shadow-xl">
         <CardHeader className="text-center pb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="mb-4 self-start text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar ao início
+          </Button>
           <div className="mx-auto mb-4 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
             <Store className="w-8 h-8 text-white" />
           </div>
@@ -84,9 +94,10 @@ const EmployeeLogin = () => {
                 type="text"
                 value={formData.storeId}
                 onChange={(e) => setFormData(prev => ({ ...prev, storeId: e.target.value }))}
-                placeholder="ID da sua loja"
+                placeholder="ID da sua loja (6-8 caracteres)"
                 required
                 disabled={loading}
+                maxLength={8}
               />
             </div>
 

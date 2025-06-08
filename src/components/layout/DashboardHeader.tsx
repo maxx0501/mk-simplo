@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from '../NotificationDropdown';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubscriptionInfo {
   subscribed: boolean;
@@ -16,8 +17,10 @@ interface SubscriptionInfo {
 export const DashboardHeader = () => {
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Extrair nome do usuário do email ou usar o nome completo se disponível
   const getUserDisplayName = () => {
@@ -28,6 +31,33 @@ export const DashboardHeader = () => {
       return user.email.split('@')[0];
     }
     return 'Usuário';
+  };
+
+  // Gerar ID da loja de 8 caracteres baseado no store_id
+  const getStoreDisplayId = () => {
+    if (user.store_id) {
+      return user.store_id.substring(0, 8).toLowerCase();
+    }
+    return '';
+  };
+
+  const copyStoreId = async () => {
+    const storeId = getStoreDisplayId();
+    try {
+      await navigator.clipboard.writeText(storeId);
+      setCopied(true);
+      toast({
+        title: "ID copiado!",
+        description: "ID da loja copiado para a área de transferência"
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o ID da loja",
+        variant: "destructive"
+      });
+    }
   };
 
   const checkSubscription = async (showLoading = false) => {
@@ -123,6 +153,26 @@ export const DashboardHeader = () => {
             <p className="text-sm text-gray-500">
               Bem-vindo, {getUserDisplayName()}
             </p>
+            {user.store_id && (
+              <div className="flex items-center mt-1">
+                <span className="text-xs text-gray-400 mr-2">ID:</span>
+                <Badge variant="outline" className="text-xs mr-2">
+                  {getStoreDisplayId()}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyStoreId}
+                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                >
+                  {copied ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <Copy className="h-3 w-3 text-gray-500" />
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
