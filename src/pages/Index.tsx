@@ -82,15 +82,15 @@ const Index = () => {
               <span className="ml-2 text-2xl font-bold text-gray-900">MK Simplo</span>
             </div>
             <div className="flex space-x-4">
-              <Button variant="outline" onClick={() => navigate('/employee-login')}>
+              <Button variant="outline" onClick={() => navigate('/employee-login')} className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50">
                 <UserCheck className="w-4 h-4 mr-2" />
-                Login Vendedor
+                Acesso para Vendedores
               </Button>
-              <Button variant="outline" onClick={() => navigate('/login')}>
+              <Button variant="outline" onClick={() => navigate('/login')} className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700">
                 Entrar
               </Button>
               <Button onClick={() => navigate('/register')} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                Começar Grátis
+                Começar Período de Teste
               </Button>
             </div>
           </div>
@@ -113,7 +113,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 onClick={() => navigate('/register')}
-                className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4"
+                className="bg-yellow-500 hover:bg-yellow-600 text-black text-lg px-8 py-4"
               >
                 Começar Período de Teste
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -122,7 +122,7 @@ const Index = () => {
                 size="lg" 
                 variant="outline"
                 onClick={() => navigate('/employee-login')}
-                className="text-lg px-8 py-4 border-yellow-400 text-yellow-600 hover:bg-yellow-50"
+                className="text-lg px-8 py-4 border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               >
                 <UserCheck className="mr-2 h-5 w-5" />
                 Acesso para Vendedores
@@ -227,7 +227,7 @@ const Index = () => {
           <Button 
             size="lg" 
             onClick={() => navigate('/register')}
-            className="bg-yellow-500 hover:bg-yellow-600 text-black text-lg px-8 py-4"
+            className="bg-white hover:bg-gray-100 text-black text-lg px-8 py-4"
           >
             Começar Agora - 7 Dias Grátis
             <ArrowRight className="ml-2 h-5 w-5" />

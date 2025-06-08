@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Package, Plus, Edit2, Trash2 } from 'lucide-react';
 import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 import { useToast } from '@/hooks/use-toast';
+import { useProductStorage } from '@/hooks/useProductStorage';
 import {
   Dialog,
   DialogContent,
@@ -25,21 +26,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  stock_quantity: number;
-  sku?: string;
-  created_at: string;
-}
-
 export default function Products() {
   const [user, setUser] = useState<any>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -49,20 +39,12 @@ export default function Products() {
   });
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { products, addProduct, updateProduct, deleteProduct } = useProductStorage();
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
     setUser(userData);
-    if (userData?.store_id) {
-      loadProducts();
-    }
   }, []);
-
-  const loadProducts = () => {
-    // Simular carregamento de produtos - implementar com Supabase depois
-    const mockProducts: Product[] = [];
-    setProducts(mockProducts);
-  };
 
   // Se o usuário não tem loja, mostrar opções de acesso
   if (!user?.store_id) {
@@ -100,35 +82,29 @@ export default function Products() {
     setSubmitting(true);
 
     try {
-      const productData: Product = {
-        id: editingProduct?.id || Date.now().toString(),
+      const productData = {
         name: formData.name,
         description: formData.description,
         price: price,
         stock_quantity: stockQuantity,
-        sku: formData.sku,
-        created_at: editingProduct?.created_at || new Date().toISOString()
+        sku: formData.sku
       };
 
       if (editingProduct) {
-        // Atualizar produto existente
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? productData : p));
+        updateProduct(editingProduct.id, productData);
         toast({
           title: "Produto atualizado",
           description: `${formData.name} foi atualizado com sucesso`
         });
       } else {
-        // Adicionar novo produto
-        setProducts(prev => [productData, ...prev]);
+        addProduct(productData);
         toast({
           title: "Produto cadastrado",
           description: `${formData.name} foi adicionado ao catálogo`
         });
       }
 
-      // Resetar formulário
-      setFormData({ name: '', description: '', price: '', stock_quantity: '', sku: '' });
-      setEditingProduct(null);
+      resetForm();
       setIsDialogOpen(false);
     } catch (error: any) {
       console.error('Erro:', error);
@@ -142,7 +118,7 @@ export default function Products() {
     }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: any) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -155,7 +131,7 @@ export default function Products() {
   };
 
   const handleDelete = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
+    deleteProduct(productId);
     toast({
       title: "Produto removido",
       description: "Produto foi removido do catálogo"

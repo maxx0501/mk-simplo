@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart, Plus, DollarSign, Calendar } from 'lucide-react';
+import { ShoppingCart, Plus, DollarSign, Calendar, Search } from 'lucide-react';
 import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 import { useToast } from '@/hooks/use-toast';
+import { useProductStorage } from '@/hooks/useProductStorage';
+import { useSalesStorage } from '@/hooks/useSalesStorage';
 import {
   Dialog,
   DialogContent,
@@ -24,41 +26,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface Sale {
-  id: string;
-  product_name: string;
-  product_value: number;
-  sale_date: string;
-  notes?: string;
-  employee_name: string;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Sales() {
   const [user, setUser] = useState<any>(null);
-  const [sales, setSales] = useState<Sale[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [productSearch, setProductSearch] = useState('');
   const [formData, setFormData] = useState({
-    product_name: '',
-    product_value: '',
     notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { products } = useProductStorage();
+  const { sales, addSale } = useSalesStorage();
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
     setUser(userData);
-    if (userData?.store_id) {
-      loadSales();
-    }
   }, []);
-
-  const loadSales = () => {
-    // Simular carregamento de vendas - implementar com Supabase depois
-    const mockSales: Sale[] = [];
-    setSales(mockSales);
-  };
 
   // Se o usuário não tem loja, mostrar opções de acesso
   if (!user?.store_id) {
@@ -69,23 +61,17 @@ export default function Sales() {
     );
   }
 
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.product_name || !formData.product_value) {
+    if (!selectedProduct) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Preencha o nome do produto e o valor",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const value = parseFloat(formData.product_value);
-    if (isNaN(value) || value <= 0) {
-      toast({
-        title: "Valor inválido",
-        description: "Digite um valor válido para o produto",
+        title: "Produto obrigatório",
+        description: "Selecione um produto para registrar a venda",
         variant: "destructive"
       });
       return;
@@ -94,24 +80,29 @@ export default function Sales() {
     setSubmitting(true);
 
     try {
-      const saleData: Sale = {
-        id: Date.now().toString(),
-        product_name: formData.product_name,
-        product_value: value,
-        sale_date: new Date().toISOString(),
+      const product = products.find(p => p.id === selectedProduct);
+      if (!product) {
+        throw new Error('Produto não encontrado');
+      }
+
+      const saleData = {
+        product_name: product.name,
+        product_value: product.price,
         notes: formData.notes,
         employee_name: user.full_name || user.email?.split('@')[0] || 'Usuário'
       };
 
-      setSales(prev => [saleData, ...prev]);
+      addSale(saleData);
       
       toast({
         title: "Venda registrada com sucesso",
-        description: `${formData.product_name} - R$ ${value.toFixed(2)}`
+        description: `${product.name} - R$ ${product.price.toFixed(2)}`
       });
 
       // Resetar formulário
-      setFormData({ product_name: '', product_value: '', notes: '' });
+      setFormData({ notes: '' });
+      setSelectedProduct('');
+      setProductSearch('');
       setIsDialogOpen(false);
     } catch (error: any) {
       console.error('Erro:', error);
@@ -126,7 +117,9 @@ export default function Sales() {
   };
 
   const resetForm = () => {
-    setFormData({ product_name: '', product_value: '', notes: '' });
+    setFormData({ notes: '' });
+    setSelectedProduct('');
+    setProductSearch('');
   };
 
   const totalSales = sales.reduce((sum, sale) => sum + sale.product_value, 0);
@@ -161,28 +154,42 @@ export default function Sales() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="product_name">Nome do Produto *</Label>
-                  <Input
-                    id="product_name"
-                    value={formData.product_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, product_name: e.target.value }))}
-                    placeholder="Digite o nome do produto"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="product_value">Valor (R$) *</Label>
-                  <Input
-                    id="product_value"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.product_value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, product_value: e.target.value }))}
-                    placeholder="0,00"
-                    disabled={submitting}
-                  />
+                  <Label htmlFor="product">Produto *</Label>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Pesquisar produto..."
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        className="pl-10"
+                        disabled={submitting}
+                      />
+                    </div>
+                    <Select value={selectedProduct} onValueChange={setSelectedProduct} disabled={submitting}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredProducts.length === 0 ? (
+                          <div className="p-2 text-center text-gray-500">
+                            {productSearch ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                          </div>
+                        ) : (
+                          filteredProducts.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              <div className="flex justify-between items-center w-full">
+                                <span>{product.name}</span>
+                                <span className="text-green-600 font-medium ml-2">
+                                  R$ {product.price.toFixed(2)}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>
@@ -264,12 +271,24 @@ export default function Sales() {
                 Nenhuma venda registrada
               </h3>
               <p className="text-gray-500 mb-6">
-                Comece registrando sua primeira venda
+                {products.length === 0 
+                  ? 'Cadastre produtos primeiro para registrar vendas'
+                  : 'Comece registrando sua primeira venda'
+                }
               </p>
-              <Button onClick={() => setIsDialogOpen(true)} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                <Plus className="w-4 h-4 mr-2" />
-                Registrar Primeira Venda
-              </Button>
+              {products.length > 0 ? (
+                <Button onClick={() => setIsDialogOpen(true)} className="bg-yellow-500 hover:bg-yellow-600 text-black">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Registrar Primeira Venda
+                </Button>
+              ) : (
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <a href="/products">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Cadastrar Produtos
+                  </a>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

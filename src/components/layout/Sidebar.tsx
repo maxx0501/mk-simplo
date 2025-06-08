@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { 
   Store, 
   BarChart3, 
@@ -10,8 +11,11 @@ import {
   UserCheck,
   Settings, 
   CreditCard,
-  Home
+  Home,
+  LogOut
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -26,12 +30,38 @@ const navigation = [
 
 export const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('mksimplo_user');
+      localStorage.removeItem('mksimplo_products');
+      localStorage.removeItem('mksimplo_sales');
+      window.dispatchEvent(new Event('storage'));
+      
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso"
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      toast({
+        title: "Erro no logout",
+        description: "Ocorreu um erro ao fazer logout",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
-    <div className="flex flex-col w-64 bg-white border-r border-gray-200">
-      <div className="flex items-center h-16 px-6 border-b border-gray-200">
-        <Store className="h-8 w-8 text-blue-600" />
-        <span className="ml-2 text-xl font-semibold text-gray-900">MK Simplo</span>
+    <div className="flex flex-col w-64 bg-gray-900 border-r border-gray-700">
+      <div className="flex items-center h-16 px-6 border-b border-gray-700">
+        <Store className="h-8 w-8 text-blue-400" />
+        <span className="ml-2 text-xl font-semibold text-white">MK Simplo</span>
       </div>
       
       <nav className="flex-1 px-4 py-6 space-y-2">
@@ -46,8 +76,8 @@ export const Sidebar = () => {
               className={cn(
                 'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors',
                 isActive
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:text-white hover:bg-gray-800'
               )}
             >
               <Icon className="mr-3 h-5 w-5" />
@@ -56,6 +86,17 @@ export const Sidebar = () => {
           );
         })}
       </nav>
+
+      <div className="p-4 border-t border-gray-700">
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800"
+        >
+          <LogOut className="mr-3 h-5 w-5" />
+          Sair da Conta
+        </Button>
+      </div>
     </div>
   );
 };
