@@ -22,15 +22,20 @@ export const useStoreAccess = () => {
 
       const user = sessionData.session.user;
 
-      // Buscar loja pelo código de acesso (usando os primeiros 8 caracteres do ID)
+      // Buscar loja pelo código de acesso
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('*')
-        .ilike('id', `${accessCode.toLowerCase()}%`)
-        .single();
+        .eq('access_code', accessCode.toUpperCase())
+        .maybeSingle();
 
-      if (storeError || !storeData) {
-        throw new Error('ID da loja inválido. Verifique o ID e tente novamente.');
+      if (storeError) {
+        console.error('Erro ao buscar loja:', storeError);
+        throw new Error('Erro ao verificar código de acesso.');
+      }
+
+      if (!storeData) {
+        throw new Error('Código de acesso inválido. Verifique o código e tente novamente.');
       }
 
       // Verificar se o usuário já está associado a esta loja

@@ -30,50 +30,6 @@ export type Database = {
         }
         Relationships: []
       }
-      products: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          price: number
-          sku: string | null
-          stock_quantity: number
-          store_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          price?: number
-          sku?: string | null
-          stock_quantity?: number
-          store_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          price?: number
-          sku?: string | null
-          stock_quantity?: number
-          store_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "products_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           created_at: string
@@ -100,95 +56,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      sales: {
-        Row: {
-          created_at: string
-          employee_id: string
-          employee_name: string
-          id: string
-          notes: string | null
-          product_name: string
-          product_value: number
-          sale_date: string
-          store_id: string
-        }
-        Insert: {
-          created_at?: string
-          employee_id: string
-          employee_name: string
-          id?: string
-          notes?: string | null
-          product_name: string
-          product_value: number
-          sale_date?: string
-          store_id: string
-        }
-        Update: {
-          created_at?: string
-          employee_id?: string
-          employee_name?: string
-          id?: string
-          notes?: string | null
-          product_name?: string
-          product_value?: number
-          sale_date?: string
-          store_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sales_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "store_employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      store_employees: {
-        Row: {
-          created_at: string
-          id: string
-          login: string
-          name: string
-          password_hash: string
-          store_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          login: string
-          name: string
-          password_hash: string
-          store_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          login?: string
-          name?: string
-          password_hash?: string
-          store_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "store_employees_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "stores"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       store_invites: {
         Row: {
@@ -233,6 +100,7 @@ export type Database = {
       }
       stores: {
         Row: {
+          access_code: string | null
           cnpj: string | null
           created_at: string
           email: string
@@ -249,6 +117,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_code?: string | null
           cnpj?: string | null
           created_at?: string
           email: string
@@ -265,6 +134,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_code?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string
@@ -375,18 +245,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      authenticate_employee: {
-        Args: {
-          store_id_param: string
-          login_param: string
-          password_param: string
-        }
-        Returns: {
-          employee_id: string
-          employee_name: string
-          store_name: string
-        }[]
-      }
       generate_store_access_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -405,14 +263,6 @@ export type Database = {
       }
       is_superadmin: {
         Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      user_belongs_to_store: {
-        Args: { store_id_param: string }
-        Returns: boolean
-      }
-      user_is_store_owner: {
-        Args: { store_id_param: string }
         Returns: boolean
       }
     }
