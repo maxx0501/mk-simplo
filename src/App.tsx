@@ -17,6 +17,9 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Subscription from "./pages/Subscription";
+import Employees from "./pages/Employees";
+import EmployeeLogin from "./pages/EmployeeLogin";
+import EmployeeSales from "./pages/EmployeeSales";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,9 +41,12 @@ const App = () => (
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/employees" element={<Employees />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/employee-login" element={<EmployeeLogin />} />
+          <Route path="/employee-sales" element={<EmployeeSales />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
