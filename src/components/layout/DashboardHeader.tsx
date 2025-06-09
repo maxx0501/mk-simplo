@@ -2,111 +2,65 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from '../NotificationDropdown';
 import { supabase } from '@/integrations/supabase/client';
-
-interface SubscriptionInfo {
-  subscribed: boolean;
-  plan_type: string;
-  trial_end?: string;
-}
+import { useToast } from '@/hooks/use-toast';
 
 export const DashboardHeader = () => {
-  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
+  const [empresa, setEmpresa] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Extrair nome do usuário do email ou usar o nome completo se disponível
-  const getUserDisplayName = () => {
-    if (user.full_name) {
-      return user.full_name;
-    }
-    if (user.email) {
-      return user.email.split('@')[0];
-    }
-    return 'Usuário';
-  };
-
-  const checkSubscription = async (showLoading = false) => {
+  const loadEmpresaData = async () => {
     try {
-      if (showLoading) setRefreshing(true);
-      
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (!error && data) {
-        setSubscriptionInfo(data);
+      const { data: userData } = await supabase
+        .from('usuarios')
+        .select(`
+          *,
+          empresas (*)
+        `)
+        .eq('id', user.id)
+        .single();
+
+      if (userData?.empresas) {
+        setEmpresa(userData.empresas);
       }
     } catch (error) {
-      console.error('Erro ao verificar assinatura:', error);
-    } finally {
-      if (showLoading) setRefreshing(false);
+      console.error('Erro ao carregar dados da empresa:', error);
     }
   };
 
   useEffect(() => {
-    checkSubscription();
-    // Verificar a cada 30 segundos
-    const interval = setInterval(() => checkSubscription(), 30000);
-    return () => clearInterval(interval);
+    loadEmpresaData();
   }, []);
 
-  const handlePlanClick = () => {
-    navigate('/subscription');
-  };
-
   const handleRefresh = () => {
-    checkSubscription(true);
+    setRefreshing(true);
+    loadEmpresaData().finally(() => setRefreshing(false));
   };
 
-  const getPlanDisplay = () => {
-    if (!subscriptionInfo) return 'Verificando...';
-    
-    if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'Plano Pro';
+  const copyEmpresaId = () => {
+    if (empresa?.id) {
+      navigator.clipboard.writeText(empresa.id);
+      setCopied(true);
+      toast({
+        title: "ID copiado!",
+        description: "ID da empresa copiado para a área de transferência"
+      });
+      setTimeout(() => setCopied(false), 2000);
     }
-    
-    if (subscriptionInfo.plan_type === 'trial') {
-      const trialEnd = subscriptionInfo.trial_end ? new Date(subscriptionInfo.trial_end) : null;
-      const now = new Date();
-      const remainingDays = trialEnd ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-      
-      if (remainingDays > 0) {
-        return `Teste (${remainingDays}d)`;
-      } else {
-        return 'Teste Expirado';
-      }
-    }
-    
-    return 'Plano Gratuito';
   };
 
-  const getPlanColor = () => {
-    if (!subscriptionInfo) return 'text-gray-600 border-gray-600 bg-gray-50';
-    
-    if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
-    }
-    
-    if (subscriptionInfo.plan_type === 'trial') {
-      const trialEnd = subscriptionInfo.trial_end ? new Date(subscriptionInfo.trial_end) : null;
-      const now = new Date();
-      const remainingDays = trialEnd ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-      
-      if (remainingDays > 0) {
-        return remainingDays <= 2 
-          ? 'text-orange-700 border-orange-300 bg-orange-50 hover:bg-orange-100' 
-          : 'text-green-700 border-green-300 bg-green-50 hover:bg-green-100';
-      } else {
-        return 'text-red-700 border-red-300 bg-red-50 hover:bg-red-100';
-      }
-    }
-    
-    return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
+  const getUserDisplayName = () => {
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    return userData.nome || userData.email?.split('@')[0] || 'Usuário';
   };
 
   return (
@@ -118,7 +72,7 @@ export const DashboardHeader = () => {
           </Button>
           <div className="ml-4 md:ml-0">
             <h2 className="text-lg font-semibold text-black">
-              {user.store_name || 'Empresa Exemplo'}
+              {empresa?.nome || 'Carregando...'}
             </h2>
             <p className="text-sm text-gray-500">
               Bem-vindo, {getUserDisplayName()}
@@ -137,12 +91,24 @@ export const DashboardHeader = () => {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
           
+          {empresa?.id && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyEmpresaId}
+              className="text-gray-600 hover:text-gray-900 border-gray-300"
+            >
+              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+              ID: {empresa.id.slice(-6)}
+            </Button>
+          )}
+          
           <Badge 
             variant="outline" 
-            className={`${getPlanColor()} cursor-pointer transition-all duration-200 font-medium px-3 py-1 border-2`}
-            onClick={handlePlanClick}
+            className="bg-yellow-50 text-yellow-700 border-yellow-300 cursor-pointer transition-all duration-200 font-medium px-3 py-1 border-2"
+            onClick={() => navigate('/subscription')}
           >
-            {getPlanDisplay()}
+            Teste Grátis
           </Badge>
           
           <NotificationDropdown />
