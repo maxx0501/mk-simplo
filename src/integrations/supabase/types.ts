@@ -9,24 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      empresas: {
-        Row: {
-          criado_em: string | null
-          id: string
-          nome: string
-        }
-        Insert: {
-          criado_em?: string | null
-          id?: string
-          nome: string
-        }
-        Update: {
-          criado_em?: string | null
-          id?: string
-          nome?: string
-        }
-        Relationships: []
-      }
       platform_admins: {
         Row: {
           created_at: string
@@ -48,40 +30,52 @@ export type Database = {
         }
         Relationships: []
       }
-      produtos: {
+      products: {
         Row: {
-          created_at: string | null
-          empresa_id: string
-          estoque: number
+          barcode: string | null
+          category: string | null
+          created_at: string
+          description: string | null
           id: string
-          nome: string
-          preco: number
-          updated_at: string | null
+          name: string
+          price: number
+          sku: string | null
+          stock_quantity: number
+          store_id: string
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
-          empresa_id: string
-          estoque?: number
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
           id?: string
-          nome: string
-          preco?: number
-          updated_at?: string | null
+          name: string
+          price?: number
+          sku?: string | null
+          stock_quantity?: number
+          store_id: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
-          empresa_id?: string
-          estoque?: number
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
           id?: string
-          nome?: string
-          preco?: number
-          updated_at?: string | null
+          name?: string
+          price?: number
+          sku?: string | null
+          stock_quantity?: number
+          store_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "produtos_empresa_id_fkey"
-            columns: ["empresa_id"]
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "empresas"
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -113,6 +107,57 @@ export type Database = {
         }
         Relationships: []
       }
+      sales: {
+        Row: {
+          created_at: string
+          employee_id: string
+          employee_name: string
+          id: string
+          notes: string | null
+          product_name: string
+          product_value: number
+          sale_date: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          employee_name: string
+          id?: string
+          notes?: string | null
+          product_name: string
+          product_value: number
+          sale_date?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          employee_name?: string
+          id?: string
+          notes?: string | null
+          product_name?: string
+          product_value?: number
+          sale_date?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "store_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_employees: {
         Row: {
           created_at: string
@@ -120,7 +165,6 @@ export type Database = {
           login: string
           name: string
           password_hash: string
-          permissions: Json | null
           store_id: string
           updated_at: string
         }
@@ -130,7 +174,6 @@ export type Database = {
           login: string
           name: string
           password_hash: string
-          permissions?: Json | null
           store_id: string
           updated_at?: string
         }
@@ -140,7 +183,6 @@ export type Database = {
           login?: string
           name?: string
           password_hash?: string
-          permissions?: Json | null
           store_id?: string
           updated_at?: string
         }
@@ -154,48 +196,98 @@ export type Database = {
           },
         ]
       }
+      store_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          store_id: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          store_id: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          store_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_invites_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
-          access_code: string
+          access_code: string | null
+          cnpj: string | null
           created_at: string
           email: string
           id: string
           name: string
           owner_name: string
+          phone: string | null
           plan_type: string
           status: string
           subscription_id: string | null
+          subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
-          access_code?: string
+          access_code?: string | null
+          cnpj?: string | null
           created_at?: string
           email: string
           id?: string
           name: string
           owner_name: string
+          phone?: string | null
           plan_type?: string
           status?: string
           subscription_id?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
-          access_code?: string
+          access_code?: string | null
+          cnpj?: string | null
           created_at?: string
           email?: string
           id?: string
           name?: string
           owner_name?: string
+          phone?: string | null
           plan_type?: string
           status?: string
           subscription_id?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -255,76 +347,34 @@ export type Database = {
         }
         Relationships: []
       }
-      usuarios: {
+      user_stores: {
         Row: {
-          created_at: string | null
-          email: string
-          empresa_id: string
+          created_at: string
           id: string
-          nome: string
+          role: string
+          store_id: string
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
-          email: string
-          empresa_id: string
-          id: string
-          nome: string
+          created_at?: string
+          id?: string
+          role?: string
+          store_id: string
+          user_id: string
         }
         Update: {
-          created_at?: string | null
-          email?: string
-          empresa_id?: string
+          created_at?: string
           id?: string
-          nome?: string
+          role?: string
+          store_id?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "usuarios_empresa_id_fkey"
-            columns: ["empresa_id"]
+            foreignKeyName: "user_stores_store_id_fkey"
+            columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      vendas: {
-        Row: {
-          data: string | null
-          empresa_id: string
-          id: string
-          produto_id: string
-          quantidade: number
-          valor_total: number
-        }
-        Insert: {
-          data?: string | null
-          empresa_id: string
-          id?: string
-          produto_id: string
-          quantidade: number
-          valor_total?: number
-        }
-        Update: {
-          data?: string | null
-          empresa_id?: string
-          id?: string
-          produto_id?: string
-          quantidade?: number
-          valor_total?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vendas_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vendas_produto_id_fkey"
-            columns: ["produto_id"]
-            isOneToOne: false
-            referencedRelation: "produtos"
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]

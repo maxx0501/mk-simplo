@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -62,32 +61,6 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				},
-				'royal-blue': {
-					DEFAULT: 'hsl(var(--royal-blue))',
-					50: 'hsl(var(--royal-blue) / 0.05)',
-					100: 'hsl(var(--royal-blue) / 0.1)',
-					200: 'hsl(var(--royal-blue) / 0.2)',
-					300: 'hsl(var(--royal-blue) / 0.3)',
-					400: 'hsl(var(--royal-blue) / 0.4)',
-					500: 'hsl(var(--royal-blue) / 0.5)',
-					600: 'hsl(var(--royal-blue) / 0.6)',
-					700: 'hsl(var(--royal-blue) / 0.7)',
-					800: 'hsl(var(--royal-blue) / 0.8)',
-					900: 'hsl(var(--royal-blue) / 0.9)',
-				},
-				'golden-yellow': {
-					DEFAULT: 'hsl(var(--golden-yellow))',
-					50: 'hsl(var(--golden-yellow) / 0.05)',
-					100: 'hsl(var(--golden-yellow) / 0.1)',
-					200: 'hsl(var(--golden-yellow) / 0.2)',
-					300: 'hsl(var(--golden-yellow) / 0.3)',
-					400: 'hsl(var(--golden-yellow) / 0.4)',
-					500: 'hsl(var(--golden-yellow) / 0.5)',
-					600: 'hsl(var(--golden-yellow) / 0.6)',
-					700: 'hsl(var(--golden-yellow) / 0.7)',
-					800: 'hsl(var(--golden-yellow) / 0.8)',
-					900: 'hsl(var(--golden-yellow) / 0.9)',
 				}
 			},
 			borderRadius: {

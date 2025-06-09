@@ -23,9 +23,9 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
 
   // Verificar se o usuário já tem uma loja
   console.log('Verificando se usuário já tem loja...');
-  const { data: existingStore, error: checkError } = await (supabase as any)
-    .from('stores')
-    .select('id')
+  const { data: existingStore, error: checkError } = await supabase
+    .from('user_stores')
+    .select('store_id')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -34,7 +34,7 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
   }
 
   if (existingStore) {
-    console.log('Usuário já tem loja:', existingStore.id);
+    console.log('Usuário já tem loja:', existingStore.store_id);
     throw new Error('Você já possui uma loja cadastrada.');
   }
 
@@ -57,22 +57,29 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     // Não bloquear a criação da loja por isso
   }
 
+  // Gerar código de acesso único para a loja
+  const { data: accessCodeData } = await supabase.rpc('generate_store_access_code');
+  const accessCode = accessCodeData || 'TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase();
+
   // Criar a loja com dados obrigatórios corretamente preenchidos
   console.log('Criando loja na tabela stores...');
   const storeData = {
     name: storeName.trim(),
     email: user.email || '',
+    phone: phone || null,
+    cnpj: cnpj || null,
     owner_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Proprietário',
-    plan_type: 'trial', // Garantir que seja preenchido
+    plan_type: 'free', // Garantir que seja preenchido
     status: 'active', // Garantir que seja preenchido
-    trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias
-    user_id: user.id
+    subscription_status: 'trial', // Garantir que seja preenchido
+    trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    user_id: user.id,
+    access_code: accessCode
   };
 
   console.log('Dados da loja a serem inseridos:', storeData);
 
-  // Use type assertion to bypass TypeScript errors temporarily
-  const { data: newStoreData, error: storeError } = await (supabase as any)
+  const { data: newStoreData, error: storeError } = await supabase
     .from('stores')
     .insert(storeData)
     .select()
@@ -90,7 +97,28 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
   }
 
   console.log('Loja criada com sucesso:', newStoreData);
-  console.log('✅ Nova loja criada com campos obrigatórios preenchidos corretamente');
+
+  // Associar usuário à loja
+  console.log('Criando associação user_stores...');
+  const { error: userStoreError } = await supabase
+    .from('user_stores')
+    .insert({
+      user_id: user.id,
+      store_id: newStoreData.id,
+      role: 'owner'
+    });
+
+  if (userStoreError) {
+    console.error('Erro ao associar usuário à loja:', userStoreError);
+    
+    // Rollback: deletar a loja criada
+    await supabase.from('stores').delete().eq('id', newStoreData.id);
+    
+    throw new Error('Não foi possível associar a loja ao usuário.');
+  }
+
+  console.log('Associação criada com sucesso');
+  console.log('✅ Nova loja criada com ID:', accessCode);
 
   // Retornar dados da loja criada
   return {
@@ -99,7 +127,8 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
       id: newStoreData.id,
       name: newStoreData.name,
       email: newStoreData.email,
-      owner_name: newStoreData.owner_name
+      owner_name: newStoreData.owner_name,
+      access_code: newStoreData.access_code
     },
     userData: {
       id: user.id,

@@ -6,229 +6,177 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Package, Plus, Edit, Trash2 } from 'lucide-react';
-import { CreateStoreForm } from '@/components/store/CreateStoreForm';
+import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface Product {
   id: string;
-  nome: string;
-  estoque: number;
-  preco: number;
-  created_at: string;
+  name: string;
+  price: number;
+  stock_quantity: number;
+  sku: string;
+  description: string;
+  category: string;
 }
 
 export default function Products() {
-  const [hasStore, setHasStore] = useState<boolean | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [newProduct, setNewProduct] = useState({
-    nome: '',
-    estoque: '',
-    preco: ''
-  });
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    stock_quantity: '',
+    sku: '',
+    description: '',
+    category: ''
+  });
+
   useEffect(() => {
-    checkUserStore();
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
+
+    if (userData.store_id) {
+      fetchProducts(userData.store_id);
+    }
   }, []);
 
-  const checkUserStore = async () => {
+  const fetchProducts = async (storeId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
 
-      const { data: userData } = await supabase
-        .from('usuarios')
-        .select('empresa_id')
-        .eq('id', user.id)
-        .single();
-
-      if (userData?.empresa_id) {
-        setHasStore(true);
-        loadProducts(userData.empresa_id);
-      } else {
-        setHasStore(false);
-      }
+      if (error) throw error;
+      setProducts(data || []);
     } catch (error) {
-      console.error('Erro ao verificar loja:', error);
-      setHasStore(false);
+      console.error('Erro ao buscar produtos:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os produtos",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.store_id) return;
+
+    setLoading(true);
+    try {
+      const productData = {
+        name: formData.name,
+        price: parseFloat(formData.price),
+        stock_quantity: parseInt(formData.stock_quantity),
+        sku: formData.sku,
+        description: formData.description,
+        category: formData.category,
+        store_id: user.store_id
+      };
+
+      if (editingProduct) {
+        const { error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', editingProduct.id);
+
+        if (error) throw error;
+        toast({
+          title: "Sucesso",
+          description: "Produto atualizado com sucesso!"
+        });
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .insert(productData);
+
+        if (error) throw error;
+        toast({
+          title: "Sucesso",
+          description: "Produto adicionado com sucesso!"
+        });
+      }
+
+      resetForm();
+      fetchProducts(user.store_id);
+    } catch (error) {
+      console.error('Erro ao salvar produto:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o produto",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const loadProducts = async (empresaId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*')
-        .eq('empresa_id', empresaId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error: any) {
-      console.error('Erro ao carregar produtos:', error);
-      toast({
-        title: "Erro ao carregar produtos",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSubmitProduct = async () => {
-    if (!newProduct.nome || !newProduct.estoque || !newProduct.preco) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { data: userData } = await supabase
-        .from('usuarios')
-        .select('empresa_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!userData?.empresa_id) throw new Error('Empresa não encontrada');
-
-      const productData = {
-        empresa_id: userData.empresa_id,
-        nome: newProduct.nome,
-        estoque: parseInt(newProduct.estoque),
-        preco: parseFloat(newProduct.preco)
-      };
-
-      if (editingProduct) {
-        const { error } = await supabase
-          .from('produtos')
-          .update(productData)
-          .eq('id', editingProduct.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Produto atualizado",
-          description: `${newProduct.nome} foi atualizado com sucesso`
-        });
-      } else {
-        const { error } = await supabase
-          .from('produtos')
-          .insert(productData);
-
-        if (error) throw error;
-
-        toast({
-          title: "Produto criado",
-          description: `${newProduct.nome} foi adicionado ao catálogo`
-        });
-      }
-
-      setNewProduct({ nome: '', estoque: '', preco: '' });
-      setEditingProduct(null);
-      setIsDialogOpen(false);
-      loadProducts(userData.empresa_id);
-    } catch (error: any) {
-      console.error('Erro:', error);
-      toast({
-        title: "Erro ao salvar produto",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditProduct = (product: Product) => {
+  const handleEdit = (product: Product) => {
     setEditingProduct(product);
-    setNewProduct({
-      nome: product.nome,
-      estoque: product.estoque.toString(),
-      preco: product.preco.toString()
+    setFormData({
+      name: product.name,
+      price: product.price.toString(),
+      stock_quantity: product.stock_quantity.toString(),
+      sku: product.sku || '',
+      description: product.description || '',
+      category: product.category || ''
     });
-    setIsDialogOpen(true);
+    setShowForm(true);
   };
 
-  const handleDeleteProduct = async (id: string, nome: string) => {
-    if (!confirm(`Tem certeza que deseja excluir ${nome}?`)) return;
+  const handleDelete = async (productId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
 
     try {
       const { error } = await supabase
-        .from('produtos')
+        .from('products')
         .delete()
-        .eq('id', id);
+        .eq('id', productId);
 
       if (error) throw error;
-
+      
       toast({
-        title: "Produto excluído",
-        description: `${nome} foi removido do catálogo`
+        title: "Sucesso",
+        description: "Produto excluído com sucesso!"
       });
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase
-          .from('usuarios')
-          .select('empresa_id')
-          .eq('id', user.id)
-          .single();
-
-        if (userData?.empresa_id) {
-          loadProducts(userData.empresa_id);
-        }
-      }
-    } catch (error: any) {
-      console.error('Erro:', error);
+      
+      fetchProducts(user.store_id);
+    } catch (error) {
+      console.error('Erro ao excluir produto:', error);
       toast({
-        title: "Erro ao excluir produto",
-        description: error.message,
+        title: "Erro",
+        description: "Não foi possível excluir o produto",
         variant: "destructive"
       });
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      price: '',
+      stock_quantity: '',
+      sku: '',
+      description: '',
+      category: ''
+    });
+    setEditingProduct(null);
+    setShowForm(false);
+  };
 
-  if (!hasStore) {
+  // Se o usuário não tem loja, mostrar opções de acesso
+  if (!user?.store_id) {
     return (
       <DashboardLayout>
-        <CreateStoreForm />
+        <StoreAccessOptions />
       </DashboardLayout>
     );
   }
@@ -236,149 +184,160 @@ export default function Products() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-            <p className="text-gray-600 mt-1">Gerencie o catálogo da sua loja</p>
+            <p className="text-gray-500">Gerencie o catálogo da sua loja</p>
           </div>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg"
-                onClick={() => {
-                  setEditingProduct(null);
-                  setNewProduct({ nome: '', estoque: '', preco: '' });
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Produto
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-white rounded-xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingProduct ? 'Editar Produto' : 'Cadastrar Novo Produto'}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nome">Nome do Produto</Label>
-                  <Input
-                    id="nome"
-                    value={newProduct.nome}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, nome: e.target.value }))}
-                    placeholder="Nome do produto"
-                    className="rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="estoque">Quantidade em Estoque</Label>
-                  <Input
-                    id="estoque"
-                    type="number"
-                    min="0"
-                    value={newProduct.estoque}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, estoque: e.target.value }))}
-                    placeholder="Ex: 100"
-                    className="rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="preco">Preço (R$)</Label>
-                  <Input
-                    id="preco"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={newProduct.preco}
-                    onChange={(e) => setNewProduct(prev => ({ ...prev, preco: e.target.value }))}
-                    placeholder="Ex: 29.99"
-                    className="rounded-lg"
-                  />
-                </div>
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-lg">
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleSubmitProduct}
-                    disabled={submitting}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg"
-                  >
-                    {submitting ? 'Salvando...' : (editingProduct ? 'Atualizar' : 'Criar Produto')}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Produto
+          </Button>
         </div>
 
-        <Card className="bg-white shadow-sm rounded-xl border-2">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center text-xl">
-              <Package className="w-5 h-5 mr-2 text-blue-600" />
-              Catálogo de Produtos ({products.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {products.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto cadastrado</h3>
-                <p className="text-gray-600 mb-4">Comece adicionando seu primeiro produto ao catálogo</p>
-                <Button onClick={() => setIsDialogOpen(true)} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Primeiro Produto
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Estoque</TableHead>
-                    <TableHead>Preço</TableHead>
-                    <TableHead>Data de Cadastro</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.nome}</TableCell>
-                      <TableCell className="text-gray-600">{product.estoque} unidades</TableCell>
-                      <TableCell className="text-gray-600">R$ {product.preco.toFixed(2)}</TableCell>
-                      <TableCell className="text-gray-600">
-                        {new Date(product.created_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditProduct(product)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50 rounded-lg"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteProduct(product.id, product.nome)}
-                            className="text-red-600 border-red-200 hover:bg-red-50 rounded-lg"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* Form */}
+        {showForm && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Nome *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price">Preço *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="stock_quantity">Quantidade em Estoque *</Label>
+                    <Input
+                      id="stock_quantity"
+                      type="number"
+                      value={formData.stock_quantity}
+                      onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="sku">SKU</Label>
+                    <Input
+                      id="sku"
+                      value={formData.sku}
+                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Categoria</Label>
+                    <Input
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="description">Descrição</Label>
+                  <Input
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Products List */}
+        {products.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
+              <Card key={product.id}>
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-semibold text-lg">{product.name}</h3>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-2xl font-bold text-green-600">
+                      R$ {product.price.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Estoque: {product.stock_quantity} unidades
+                    </p>
+                    {product.sku && (
+                      <p className="text-sm text-gray-600">SKU: {product.sku}</p>
+                    )}
+                    {product.category && (
+                      <p className="text-sm text-gray-600">Categoria: {product.category}</p>
+                    )}
+                    {product.description && (
+                      <p className="text-sm text-gray-600">{product.description}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Nenhum produto cadastrado
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Comece adicionando seu primeiro produto ao catálogo
+              </p>
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Primeiro Produto
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
