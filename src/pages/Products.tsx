@@ -6,18 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Package, Plus, Edit, Trash2 } from 'lucide-react';
-import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
+import { EmpresaAccessOptions } from '@/components/empresa/EmpresaAccessOptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
-  name: string;
-  price: number;
-  stock_quantity: number;
-  sku: string;
-  description: string;
-  category: string;
+  nome: string;
+  preco: number;
+  estoque: number;
+  empresa_id: string;
 }
 
 export default function Products() {
@@ -29,29 +27,26 @@ export default function Products() {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    stock_quantity: '',
-    sku: '',
-    description: '',
-    category: ''
+    nome: '',
+    preco: '',
+    estoque: ''
   });
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
     setUser(userData);
 
-    if (userData.store_id) {
-      fetchProducts(userData.store_id);
+    if (userData.empresa_id) {
+      fetchProducts(userData.empresa_id);
     }
   }, []);
 
-  const fetchProducts = async (storeId: string) => {
+  const fetchProducts = async (empresaId: string) => {
     try {
       const { data, error } = await supabase
-        .from('products')
+        .from('produtos')
         .select('*')
-        .eq('store_id', storeId)
+        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -68,23 +63,20 @@ export default function Products() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.store_id) return;
+    if (!user?.empresa_id) return;
 
     setLoading(true);
     try {
       const productData = {
-        name: formData.name,
-        price: parseFloat(formData.price),
-        stock_quantity: parseInt(formData.stock_quantity),
-        sku: formData.sku,
-        description: formData.description,
-        category: formData.category,
-        store_id: user.store_id
+        nome: formData.nome,
+        preco: parseFloat(formData.preco),
+        estoque: parseInt(formData.estoque),
+        empresa_id: user.empresa_id
       };
 
       if (editingProduct) {
         const { error } = await supabase
-          .from('products')
+          .from('produtos')
           .update(productData)
           .eq('id', editingProduct.id);
 
@@ -95,7 +87,7 @@ export default function Products() {
         });
       } else {
         const { error } = await supabase
-          .from('products')
+          .from('produtos')
           .insert(productData);
 
         if (error) throw error;
@@ -106,7 +98,7 @@ export default function Products() {
       }
 
       resetForm();
-      fetchProducts(user.store_id);
+      fetchProducts(user.empresa_id);
     } catch (error) {
       console.error('Erro ao salvar produto:', error);
       toast({
@@ -122,12 +114,9 @@ export default function Products() {
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name,
-      price: product.price.toString(),
-      stock_quantity: product.stock_quantity.toString(),
-      sku: product.sku || '',
-      description: product.description || '',
-      category: product.category || ''
+      nome: product.nome,
+      preco: product.preco.toString(),
+      estoque: product.estoque.toString()
     });
     setShowForm(true);
   };
@@ -137,7 +126,7 @@ export default function Products() {
 
     try {
       const { error } = await supabase
-        .from('products')
+        .from('produtos')
         .delete()
         .eq('id', productId);
 
@@ -148,7 +137,7 @@ export default function Products() {
         description: "Produto excluído com sucesso!"
       });
       
-      fetchProducts(user.store_id);
+      fetchProducts(user.empresa_id);
     } catch (error) {
       console.error('Erro ao excluir produto:', error);
       toast({
@@ -161,24 +150,17 @@ export default function Products() {
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      price: '',
-      stock_quantity: '',
-      sku: '',
-      description: '',
-      category: ''
+      nome: '',
+      preco: '',
+      estoque: ''
     });
     setEditingProduct(null);
     setShowForm(false);
   };
 
-  // Se o usuário não tem loja, mostrar opções de acesso
-  if (!user?.store_id) {
-    return (
-      <DashboardLayout>
-        <StoreAccessOptions />
-      </DashboardLayout>
-    );
+  // Se o usuário não tem empresa, mostrar opções de acesso
+  if (!user?.empresa_id) {
+    return <EmpresaAccessOptions />;
   }
 
   return (
@@ -188,7 +170,7 @@ export default function Products() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-            <p className="text-gray-500">Gerencie o catálogo da sua loja</p>
+            <p className="text-gray-500">Gerencie o catálogo da sua empresa</p>
           </div>
           <Button onClick={() => setShowForm(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -206,61 +188,37 @@ export default function Products() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="name">Nome *</Label>
+                    <Label htmlFor="nome">Nome *</Label>
                     <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      id="nome"
+                      value={formData.nome}
+                      onChange={(e) => setFormData({...formData, nome: e.target.value})}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Preço *</Label>
+                    <Label htmlFor="preco">Preço *</Label>
                     <Input
-                      id="price"
+                      id="preco"
                       type="number"
                       step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      value={formData.preco}
+                      onChange={(e) => setFormData({...formData, preco: e.target.value})}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="stock_quantity">Quantidade em Estoque *</Label>
+                    <Label htmlFor="estoque">Estoque *</Label>
                     <Input
-                      id="stock_quantity"
+                      id="estoque"
                       type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+                      value={formData.estoque}
+                      onChange={(e) => setFormData({...formData, estoque: e.target.value})}
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input
-                      id="sku"
-                      value={formData.sku}
-                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="category">Categoria</Label>
-                    <Input
-                      id="category"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="description">Descrição</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
@@ -282,7 +240,7 @@ export default function Products() {
               <Card key={product.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-semibold text-lg">{product.name}</h3>
+                    <h3 className="font-semibold text-lg">{product.nome}</h3>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -302,20 +260,11 @@ export default function Products() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-2xl font-bold text-green-600">
-                      R$ {product.price.toFixed(2)}
+                      R$ {product.preco.toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Estoque: {product.stock_quantity} unidades
+                      Estoque: {product.estoque} unidades
                     </p>
-                    {product.sku && (
-                      <p className="text-sm text-gray-600">SKU: {product.sku}</p>
-                    )}
-                    {product.category && (
-                      <p className="text-sm text-gray-600">Categoria: {product.category}</p>
-                    )}
-                    {product.description && (
-                      <p className="text-sm text-gray-600">{product.description}</p>
-                    )}
                   </div>
                 </CardContent>
               </Card>

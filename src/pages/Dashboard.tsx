@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
+import { EmpresaAccessOptions } from '@/components/empresa/EmpresaAccessOptions';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -31,46 +31,46 @@ const Dashboard = () => {
     const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
     setUser(userData);
 
-    if (userData.store_id) {
-      fetchDashboardData(userData.store_id);
+    if (userData.empresa_id) {
+      fetchDashboardData(userData.empresa_id);
     }
   }, []);
 
-  const fetchDashboardData = async (storeId: string) => {
+  const fetchDashboardData = async (empresaId: string) => {
     try {
       // Buscar produtos
-      const { data: products } = await supabase
-        .from('products')
+      const { data: produtos } = await supabase
+        .from('produtos')
         .select('*')
-        .eq('store_id', storeId);
+        .eq('empresa_id', empresaId);
 
       // Buscar vendas
-      const { data: sales } = await supabase
-        .from('sales')
+      const { data: vendas } = await supabase
+        .from('vendas')
         .select('*')
-        .eq('store_id', storeId)
-        .order('created_at', { ascending: false });
+        .eq('empresa_id', empresaId)
+        .order('data', { ascending: false });
 
       // Vendas de hoje
       const today = new Date().toISOString().split('T')[0];
-      const todaySales = sales?.filter(sale => 
-        sale.created_at.startsWith(today)
+      const todaySales = vendas?.filter(venda => 
+        venda.data.startsWith(today)
       ) || [];
 
       // Calcular receita total
-      const totalRevenue = sales?.reduce((sum, sale) => sum + Number(sale.product_value), 0) || 0;
+      const totalRevenue = vendas?.reduce((sum, venda) => sum + Number(venda.valor_total), 0) || 0;
 
       // Produtos com estoque baixo (menos de 10 unidades)
-      const lowStock = products?.filter(product => product.stock_quantity < 10) || [];
+      const lowStock = produtos?.filter(produto => produto.estoque < 10) || [];
 
       setStats({
-        totalProducts: products?.length || 0,
-        totalSales: sales?.length || 0,
+        totalProducts: produtos?.length || 0,
+        totalSales: vendas?.length || 0,
         todayOrders: todaySales.length,
         totalRevenue
       });
 
-      setRecentSales(sales?.slice(0, 3) || []);
+      setRecentSales(vendas?.slice(0, 3) || []);
       setLowStockProducts(lowStock.slice(0, 3));
 
     } catch (error) {
@@ -78,13 +78,9 @@ const Dashboard = () => {
     }
   };
 
-  // Se o usuário não tem loja, mostrar opções de acesso
-  if (!user?.store_id) {
-    return (
-      <DashboardLayout>
-        <StoreAccessOptions />
-      </DashboardLayout>
-    );
+  // Se o usuário não tem empresa, mostrar opções de acesso
+  if (!user?.empresa_id) {
+    return <EmpresaAccessOptions />;
   }
 
   const statsData = [
@@ -141,10 +137,10 @@ const Dashboard = () => {
       color: 'bg-yellow-600 hover:bg-yellow-700'
     },
     {
-      title: 'Gerenciar Vendedores',
-      description: 'Adicione e gerencie vendedores',
-      icon: Users,
-      action: () => navigate('/users'),
+      title: 'Estoque',
+      description: 'Controle seu estoque',
+      icon: Package,
+      action: () => navigate('/inventory'),
       color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
@@ -226,16 +222,16 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {recentSales.length > 0 ? (
-                    recentSales.map((sale, index) => (
+                    recentSales.map((venda, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <p className="font-medium text-black">{sale.product_name}</p>
-                          <p className="text-sm text-gray-600">{sale.employee_name}</p>
+                          <p className="font-medium text-black">Venda #{venda.id.slice(-8)}</p>
+                          <p className="text-sm text-gray-600">Qtd: {venda.quantidade}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-black">R$ {Number(sale.product_value).toFixed(2)}</p>
+                          <p className="font-semibold text-black">R$ {Number(venda.valor_total).toFixed(2)}</p>
                           <p className="text-xs text-gray-500">
-                            {new Date(sale.created_at).toLocaleDateString()}
+                            {new Date(venda.data).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -254,14 +250,14 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {lowStockProducts.length > 0 ? (
-                    lowStockProducts.map((product, index) => (
+                    lowStockProducts.map((produto, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <p className="font-medium text-black">{product.name}</p>
-                          <p className="text-sm text-gray-600">SKU: {product.sku || 'N/A'}</p>
+                          <p className="font-medium text-black">{produto.nome}</p>
+                          <p className="text-sm text-gray-600">R$ {Number(produto.preco).toFixed(2)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-red-600">{product.stock_quantity} unidades</p>
+                          <p className="font-semibold text-red-600">{produto.estoque} unidades</p>
                           <p className="text-xs text-gray-500">Restantes</p>
                         </div>
                       </div>
