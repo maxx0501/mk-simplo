@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Plus } from 'lucide-react';
-import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
+import { CreateStoreForm } from '@/components/store/CreateStoreForm';
 
 export default function UsersPage() {
   const [user, setUser] = useState<any>(null);
@@ -14,11 +14,11 @@ export default function UsersPage() {
     setUser(userData);
   }, []);
 
-  // Se o usuário não tem loja, mostrar opções de acesso
+  // Se o usuário não tem loja, mostrar formulário de criação
   if (!user?.store_id) {
     return (
       <DashboardLayout>
-        <StoreAccessOptions />
+        <CreateStoreForm />
       </DashboardLayout>
     );
   }

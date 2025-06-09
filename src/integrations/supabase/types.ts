@@ -113,6 +113,100 @@ export type Database = {
         }
         Relationships: []
       }
+      store_employees: {
+        Row: {
+          created_at: string
+          id: string
+          login: string
+          name: string
+          password_hash: string
+          permissions: Json | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          login: string
+          name: string
+          password_hash: string
+          permissions?: Json | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          login?: string
+          name?: string
+          password_hash?: string
+          permissions?: Json | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_employees_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          access_code: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          owner_name: string
+          plan_type: string
+          status: string
+          subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_code?: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          owner_name: string
+          plan_type?: string
+          status?: string
+          subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_code?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          owner_name?: string
+          plan_type?: string
+          status?: string
+          subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string

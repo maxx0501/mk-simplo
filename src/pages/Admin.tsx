@@ -142,7 +142,8 @@ const Admin = () => {
       setLoading(true);
       console.log('🔍 Carregando lojas do banco...');
       
-      const { data: storesData, error } = await supabase
+      // Use type assertion to bypass TypeScript errors temporarily
+      const { data: storesData, error } = await (supabase as any)
         .from('stores')
         .select('*')
         .order('created_at', { ascending: false });
@@ -163,8 +164,8 @@ const Admin = () => {
 
       // Calcular estatísticas
       const totalStores = storesData?.length || 0;
-      const activeSubscriptions = storesData?.filter(store => store.plan_type === 'pro').length || 0;
-      const trialStores = storesData?.filter(store => store.plan_type === 'trial').length || 0;
+      const activeSubscriptions = storesData?.filter((store: any) => store.plan_type === 'pro').length || 0;
+      const trialStores = storesData?.filter((store: any) => store.plan_type === 'trial').length || 0;
       const totalRevenue = activeSubscriptions * 29.90; // Assumindo preço do plano Pro
       
       setStats({
@@ -206,8 +207,8 @@ const Admin = () => {
       setDeletingStore(storeId);
       console.log('🗑️ Removendo loja:', storeName);
 
-      // Usar service role para deletar
-      const { error } = await supabase
+      // Use type assertion to bypass TypeScript errors temporarily
+      const { error } = await (supabase as any)
         .from('stores')
         .delete()
         .eq('id', storeId);
