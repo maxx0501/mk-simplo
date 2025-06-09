@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const loginUser = async (email: string, password: string) => {
@@ -38,7 +37,7 @@ export const loginUser = async (email: string, password: string) => {
           id: data.user.id,
           email: data.user.email,
           role: 'superadmin',
-          empresa_id: null
+          store_id: null
         },
         redirectTo: '/admin'
       };
@@ -47,47 +46,46 @@ export const loginUser = async (email: string, password: string) => {
     console.log('⚠️ Erro ao verificar admin, continuando como usuário normal:', profileCheckError);
   }
 
-  // Buscar dados do usuário e empresa
-  const { data: usuarioData } = await supabase
-    .from('usuarios')
-    .select('*, empresas(*)')
-    .eq('id', data.user.id)
-    .single();
+  // Buscar dados da loja do usuário
+  const { data: userStoreData } = await supabase
+    .from('user_stores')
+    .select('*, stores(*)')
+    .eq('user_id', data.user.id)
+    .maybeSingle();
 
-  if (usuarioData && usuarioData.empresas) {
-    console.log('Usuário tem empresa associada:', usuarioData.empresas.nome);
+  if (userStoreData && userStoreData.stores) {
+    console.log('Usuário já tem loja associada:', userStoreData.stores.name);
     return {
       success: true,
       userData: {
         id: data.user.id,
         email: data.user.email,
-        nome: usuarioData.nome,
-        empresa_id: usuarioData.empresa_id,
-        empresa_nome: usuarioData.empresas.nome
+        role: userStoreData.role,
+        store_id: userStoreData.store_id,
+        store_name: userStoreData.stores.name
       },
       redirectTo: '/dashboard'
     };
   }
 
-  console.log('Usuário não tem empresa associada');
+  console.log('Usuário não tem loja associada');
   return {
     success: true,
     userData: {
       id: data.user.id,
       email: data.user.email,
-      nome: null,
-      empresa_id: null,
-      empresa_nome: null
+      role: 'owner',
+      store_id: null,
+      store_name: null
     },
     redirectTo: '/dashboard'
   };
 };
 
-export const registerUser = async (ownerName: string, email: string, password: string, companyName?: string) => {
+export const registerUser = async (ownerName: string, email: string, password: string) => {
   console.log('=== INICIANDO CADASTRO ===');
   console.log('Email:', email);
   console.log('Nome do proprietário:', ownerName);
-  console.log('Nome da empresa:', companyName);
   
   // Validações básicas
   if (!ownerName.trim() || !email.trim() || !password.trim()) {
@@ -105,8 +103,7 @@ export const registerUser = async (ownerName: string, email: string, password: s
     password: password,
     options: {
       data: {
-        full_name: ownerName,
-        company_name: companyName || 'Minha Empresa'
+        full_name: ownerName
       },
       emailRedirectTo: `${window.location.origin}/login`
     }

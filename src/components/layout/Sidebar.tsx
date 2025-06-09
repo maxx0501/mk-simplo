@@ -1,76 +1,63 @@
 
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { 
-  LayoutDashboard, 
+  Store, 
+  BarChart3, 
   Package, 
   ShoppingCart, 
-  BarChart3,
-  Boxes,
-  LogOut
+  Users, 
+  UserCheck,
+  Settings, 
+  CreditCard,
+  Home
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Produtos', href: '/products', icon: Package },
   { name: 'Vendas', href: '/sales', icon: ShoppingCart },
-  { name: 'Estoque', href: '/inventory', icon: Boxes },
+  { name: 'Vendedores', href: '/employees', icon: UserCheck },
+  { name: 'Estoque', href: '/inventory', icon: Store },
   { name: 'Relatórios', href: '/reports', icon: BarChart3 },
+  { name: 'Usuários', href: '/users', icon: Users },
+  { name: 'Assinatura', href: '/subscription', icon: CreditCard },
+  { name: 'Configurações', href: '/settings', icon: Settings },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      localStorage.removeItem('mksimplo_user');
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-    }
-  };
-
   return (
-    <div className="bg-black text-white w-64 min-h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-800">
-        <h2 className="text-xl font-bold">MKSimplo</h2>
+    <div className="flex flex-col w-64 bg-white border-r border-gray-200">
+      <div className="flex items-center h-16 px-6 border-b border-gray-200">
+        <Store className="h-8 w-8 text-blue-600" />
+        <span className="ml-2 text-xl font-semibold text-gray-900">MK Simplo</span>
       </div>
       
-      <nav className="flex-1 mt-6">
-        <div className="px-4 space-y-2">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <NavLink
-                key={item.name}
-                to={item.href}
-                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-yellow-500 text-black'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`}
-              >
-                <Icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </NavLink>
-            );
-          })}
-        </div>
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {navigation.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.href;
+          
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={cn(
+                'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors',
+                isActive
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              )}
+            >
+              <Icon className="mr-3 h-5 w-5" />
+              {item.name}
+            </Link>
+          );
+        })}
       </nav>
-
-      <div className="p-4 border-t border-gray-800">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          Sair
-        </button>
-      </div>
     </div>
   );
 };
