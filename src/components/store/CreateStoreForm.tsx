@@ -84,10 +84,10 @@ export const CreateStoreForm = () => {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <Card className="w-full max-w-md shadow-lg rounded-xl border-2">
+      <Card className="w-full max-w-md card-modern">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Store className="w-8 h-8 text-blue-600" />
+            <Store className="w-8 h-8 text-royal-blue" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
             Criar Sua Loja
@@ -99,19 +99,19 @@ export const CreateStoreForm = () => {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="storeName">Nome da Loja</Label>
+              <Label htmlFor="storeName" className="text-gray-700 font-medium">Nome da Loja</Label>
               <Input
                 id="storeName"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
                 placeholder="Ex: Minha Loja"
-                className="rounded-lg"
+                className="input-modern"
               />
             </div>
             <Button 
               onClick={handleCreateStore}
               disabled={loading}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-3 rounded-lg"
+              className="w-full btn-accent py-3 rounded-lg"
             >
               {loading ? (
                 'Criando...'

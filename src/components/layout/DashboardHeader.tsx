@@ -64,7 +64,7 @@ export const DashboardHeader = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <header className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -86,7 +86,7 @@ export const DashboardHeader = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 rounded-lg"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -96,7 +96,7 @@ export const DashboardHeader = () => {
               variant="outline"
               size="sm"
               onClick={copyEmpresaId}
-              className="text-gray-600 hover:text-gray-900 border-gray-300"
+              className="text-gray-600 hover:text-gray-900 border-gray-200 rounded-lg"
             >
               {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
               ID: {empresa.id.slice(-6)}
@@ -105,7 +105,7 @@ export const DashboardHeader = () => {
           
           <Badge 
             variant="outline" 
-            className="bg-yellow-50 text-yellow-700 border-yellow-300 cursor-pointer transition-all duration-200 font-medium px-3 py-1 border-2"
+            className="bg-yellow-50 text-yellow-700 border-yellow-300 cursor-pointer transition-all duration-200 font-medium px-3 py-1 border-2 rounded-lg"
             onClick={() => navigate('/subscription')}
           >
             Teste Grátis

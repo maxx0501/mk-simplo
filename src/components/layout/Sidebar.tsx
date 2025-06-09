@@ -29,8 +29,8 @@ export const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col w-64 bg-white border-r border-gray-200 shadow-sm">
-      <div className="flex items-center h-16 px-6 border-b border-gray-200 bg-blue-600">
+    <div className="flex flex-col w-64 bg-white border-r border-gray-100 shadow-sm">
+      <div className="flex items-center h-16 px-6 border-b border-gray-100 bg-royal-blue">
         <Store className="h-8 w-8 text-white" />
         <span className="ml-2 text-xl font-semibold text-white">MK Simplo</span>
       </div>
@@ -47,7 +47,7 @@ export const Sidebar = () => {
               className={cn(
                 'flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200',
                 isActive
-                  ? 'bg-blue-50 text-blue-700 border-2 border-blue-200 shadow-sm'
+                  ? 'bg-blue-50 text-royal-blue border-2 border-blue-200 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-2 border-transparent'
               )}
             >

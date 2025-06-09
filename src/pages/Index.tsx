@@ -45,22 +45,33 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <Store className="h-8 w-8 text-blue-600" />
+              <Store className="h-8 w-8 text-royal-blue" />
               <span className="ml-2 text-2xl font-bold text-gray-900">MK Simplo</span>
             </div>
             <div className="flex space-x-3">
-              <Button variant="outline" onClick={() => navigate('/employee-login')} className="border-blue-600 text-blue-600 hover:bg-blue-50">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/employee-login')} 
+                className="border-royal-blue text-royal-blue hover:bg-blue-50 rounded-lg"
+              >
                 <UserCheck className="w-4 h-4 mr-2" />
                 Login Vendedor
               </Button>
-              <Button variant="outline" onClick={() => navigate('/login')} className="border-blue-600 text-blue-600 hover:bg-blue-50">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/login')} 
+                className="border-royal-blue text-royal-blue hover:bg-blue-50 rounded-lg"
+              >
                 Entrar
               </Button>
-              <Button onClick={() => navigate('/register')} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg">
+              <Button 
+                onClick={() => navigate('/register')} 
+                className="btn-accent rounded-lg px-6"
+              >
                 Começar Teste Grátis
               </Button>
             </div>
@@ -74,7 +85,7 @@ const Index = () => {
           <div className="text-center">
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
               Controle Total do Seu
-              <span className="text-blue-600"> Negócio</span>
+              <span className="text-royal-blue"> Negócio</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
               Gerencie vendas, estoque, equipe e relatórios em uma plataforma simples e poderosa.
@@ -84,7 +95,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 onClick={() => navigate('/register')}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold text-lg px-8 py-4 rounded-xl"
+                className="btn-accent text-lg px-8 py-4 rounded-xl"
               >
                 Começar Período de Teste
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -93,7 +104,7 @@ const Index = () => {
                 size="lg" 
                 variant="outline"
                 onClick={() => navigate('/employee-login')}
-                className="text-lg px-8 py-4 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-xl"
+                className="text-lg px-8 py-4 border-royal-blue text-royal-blue hover:bg-blue-50 rounded-xl"
               >
                 <UserCheck className="mr-2 h-5 w-5" />
                 Acesso para Vendedores
@@ -119,10 +130,10 @@ const Index = () => {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="text-center hover:shadow-lg transition-shadow rounded-xl border-2">
+                <Card key={index} className="card-modern text-center">
                   <CardContent className="pt-8 pb-6">
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icon className="w-8 h-8 text-blue-600" />
+                      <Icon className="w-8 h-8 text-royal-blue" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
                     <p className="text-gray-600">{feature.description}</p>
@@ -147,7 +158,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card className="relative shadow-lg rounded-xl border-2">
+            <Card className="card-modern">
               <CardHeader className="text-center pb-6">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Zap className="w-8 h-8 text-green-600" />
@@ -178,7 +189,7 @@ const Index = () => {
                   </li>
                 </ul>
                 <Button 
-                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 rounded-lg"
+                  className="w-full py-3 btn-primary rounded-lg"
                   onClick={() => navigate('/register')}
                 >
                   Começar Teste Grátis
@@ -186,9 +197,9 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="relative ring-2 ring-yellow-500 shadow-xl rounded-xl border-2">
+            <Card className="card-modern ring-2 ring-golden-yellow">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-yellow-500 text-black px-4 py-2 rounded-full text-sm font-semibold flex items-center">
+                <span className="bg-golden-yellow text-black px-4 py-2 rounded-full text-sm font-semibold flex items-center">
                   <Crown className="w-4 h-4 mr-1" />
                   Mais Popular
                 </span>
@@ -231,7 +242,7 @@ const Index = () => {
                   </li>
                 </ul>
                 <Button 
-                  className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg"
+                  className="w-full py-3 btn-accent rounded-lg"
                   onClick={() => navigate('/register')}
                 >
                   Escolher Plano Premium
@@ -243,7 +254,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-royal-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
             Pronto para revolucionar seu negócio?
@@ -254,7 +265,7 @@ const Index = () => {
           <Button 
             size="lg" 
             onClick={() => navigate('/register')}
-            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold text-lg px-8 py-4 rounded-xl"
+            className="btn-accent text-lg px-8 py-4 rounded-xl"
           >
             Começar Agora - 7 Dias Grátis
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -268,7 +279,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
-                <Store className="h-8 w-8 text-yellow-500" />
+                <Store className="h-8 w-8 text-golden-yellow" />
                 <span className="ml-2 text-2xl font-bold">MK Simplo</span>
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
@@ -276,10 +287,10 @@ const Index = () => {
                 Simplifique suas operações e acelere seu crescimento.
               </p>
               <div className="flex space-x-4">
-                <Button variant="outline" size="sm" className="border-gray-600 text-gray-400 hover:text-white">
+                <Button variant="outline" size="sm" className="border-gray-600 text-gray-400 hover:text-white rounded-lg">
                   Sobre nós
                 </Button>
-                <Button variant="outline" size="sm" className="border-gray-600 text-gray-400 hover:text-white">
+                <Button variant="outline" size="sm" className="border-gray-600 text-gray-400 hover:text-white rounded-lg">
                   Blog
                 </Button>
               </div>
