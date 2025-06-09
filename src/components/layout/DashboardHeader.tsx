@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from '../NotificationDropdown';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubscriptionInfo {
   subscribed: boolean;
@@ -16,8 +17,10 @@ interface SubscriptionInfo {
 export const DashboardHeader = () => {
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [storeCode, setStoreCode] = useState<string>('');
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Extrair nome do usuário do email ou usar o nome completo se disponível
   const getUserDisplayName = () => {
@@ -28,6 +31,34 @@ export const DashboardHeader = () => {
       return user.email.split('@')[0];
     }
     return 'Usuário';
+  };
+
+  const fetchStoreCode = async () => {
+    if (!user.store_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('access_code')
+        .eq('id', user.store_id)
+        .single();
+      
+      if (!error && data) {
+        setStoreCode(data.access_code || '');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar código da loja:', error);
+    }
+  };
+
+  const copyStoreCode = () => {
+    if (storeCode) {
+      navigator.clipboard.writeText(storeCode);
+      toast({
+        title: "Código copiado!",
+        description: "ID da loja copiado para a área de transferência"
+      });
+    }
   };
 
   const checkSubscription = async (showLoading = false) => {
@@ -50,6 +81,7 @@ export const DashboardHeader = () => {
 
   useEffect(() => {
     checkSubscription();
+    fetchStoreCode();
     // Verificar a cada 30 segundos
     const interval = setInterval(() => checkSubscription(), 30000);
     return () => clearInterval(interval);
@@ -117,9 +149,22 @@ export const DashboardHeader = () => {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="ml-4 md:ml-0">
-            <h2 className="text-lg font-semibold text-black">
-              {user.store_name || 'Empresa Exemplo'}
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-black">
+                {user.store_name || 'Empresa Exemplo'}
+              </h2>
+              {storeCode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyStoreCode}
+                  className="text-xs px-2 py-1 h-6"
+                >
+                  <Copy className="h-3 w-3 mr-1" />
+                  ID: {storeCode}
+                </Button>
+              )}
+            </div>
             <p className="text-sm text-gray-500">
               Bem-vindo, {getUserDisplayName()}
             </p>

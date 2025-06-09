@@ -1,57 +1,118 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  BarChart3, 
   Package, 
   Users, 
   ShoppingCart,
   TrendingUp,
   DollarSign,
-  Eye,
   Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalSales: 0,
+    todayOrders: 0,
+    totalRevenue: 0
+  });
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
 
-  const stats = [
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
+
+    if (userData.store_id) {
+      fetchDashboardData(userData.store_id);
+    }
+  }, []);
+
+  const fetchDashboardData = async (storeId: string) => {
+    try {
+      // Buscar produtos
+      const { data: products } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', storeId);
+
+      // Buscar vendas
+      const { data: sales } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+
+      // Vendas de hoje
+      const today = new Date().toISOString().split('T')[0];
+      const todaySales = sales?.filter(sale => 
+        sale.created_at.startsWith(today)
+      ) || [];
+
+      // Calcular receita total
+      const totalRevenue = sales?.reduce((sum, sale) => sum + Number(sale.product_value), 0) || 0;
+
+      // Produtos com estoque baixo (menos de 10 unidades)
+      const lowStock = products?.filter(product => product.stock_quantity < 10) || [];
+
+      setStats({
+        totalProducts: products?.length || 0,
+        totalSales: sales?.length || 0,
+        todayOrders: todaySales.length,
+        totalRevenue
+      });
+
+      setRecentSales(sales?.slice(0, 3) || []);
+      setLowStockProducts(lowStock.slice(0, 3));
+
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
+    }
+  };
+
+  // Se o usuário não tem loja, mostrar opções de acesso
+  if (!user?.store_id) {
+    return (
+      <DashboardLayout>
+        <StoreAccessOptions />
+      </DashboardLayout>
+    );
+  }
+
+  const statsData = [
     {
       title: 'Total de Produtos',
-      value: '156',
-      change: '+12%',
-      changeType: 'positive' as const,
+      value: stats.totalProducts.toString(),
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
-      title: 'Vendas do Mês',
-      value: 'R$ 2.450',
-      change: '+18%',
-      changeType: 'positive' as const,
+      title: 'Receita Total',
+      value: `R$ ${stats.totalRevenue.toFixed(2)}`,
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Pedidos Hoje',
-      value: '23',
-      change: '+5%',
-      changeType: 'positive' as const,
+      title: 'Vendas Hoje',
+      value: stats.todayOrders.toString(),
       icon: ShoppingCart,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50'
     },
     {
-      title: 'Usuários Ativos',
-      value: '45',
-      change: '+8%',
-      changeType: 'positive' as const,
-      icon: Users,
+      title: 'Total de Vendas',
+      value: stats.totalSales.toString(),
+      icon: TrendingUp,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     }
@@ -66,24 +127,24 @@ const Dashboard = () => {
       color: 'bg-blue-600 hover:bg-blue-700'
     },
     {
-      title: 'Ver Relatórios',
-      description: 'Analise o desempenho do seu negócio',
-      icon: BarChart3,
-      action: () => navigate('/reports'),
+      title: 'Nova Venda',
+      description: 'Registre uma nova venda',
+      icon: ShoppingCart,
+      action: () => navigate('/sales'),
       color: 'bg-green-600 hover:bg-green-700'
     },
     {
-      title: 'Gerenciar Vendas',
-      description: 'Acompanhe e gerencie suas vendas',
-      icon: ShoppingCart,
-      action: () => navigate('/sales'),
+      title: 'Ver Relatórios',
+      description: 'Analise o desempenho do seu negócio',
+      icon: TrendingUp,
+      action: () => navigate('/reports'),
       color: 'bg-yellow-600 hover:bg-yellow-700'
     },
     {
-      title: 'Ver Estoque',
-      description: 'Monitore seu inventário atual',
-      icon: Eye,
-      action: () => navigate('/inventory'),
+      title: 'Gerenciar Vendedores',
+      description: 'Adicione e gerencie vendedores',
+      icon: Users,
+      action: () => navigate('/users'),
       color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
@@ -109,7 +170,7 @@ const Dashboard = () => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => {
+            {statsData.map((stat, index) => {
               const Icon = stat.icon;
               return (
                 <Card key={index} className="shadow-lg border-0 bg-white hover:shadow-xl transition-all">
@@ -118,10 +179,6 @@ const Dashboard = () => {
                       <div>
                         <p className="text-sm font-medium text-gray-600">{stat.title}</p>
                         <p className="text-3xl font-bold text-black mt-2">{stat.value}</p>
-                        <div className="flex items-center mt-2">
-                          <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                          <span className="text-sm text-green-600 font-medium">{stat.change}</span>
-                        </div>
                       </div>
                       <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
                         <Icon className={`w-6 h-6 ${stat.color}`} />
@@ -168,18 +225,24 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {[1, 2, 3].map((_, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-black">Produto #{index + 1}</p>
-                        <p className="text-sm text-gray-600">Cliente Exemplo</p>
+                  {recentSales.length > 0 ? (
+                    recentSales.map((sale, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-black">{sale.product_name}</p>
+                          <p className="text-sm text-gray-600">{sale.employee_name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-black">R$ {Number(sale.product_value).toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(sale.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-black">R$ {(Math.random() * 200 + 50).toFixed(2)}</p>
-                        <p className="text-xs text-gray-500">Hoje</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">Nenhuma venda registrada</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -190,18 +253,22 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {[1, 2, 3].map((_, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-black">Produto #{index + 4}</p>
-                        <p className="text-sm text-gray-600">SKU: PRD00{index + 4}</p>
+                  {lowStockProducts.length > 0 ? (
+                    lowStockProducts.map((product, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-black">{product.name}</p>
+                          <p className="text-sm text-gray-600">SKU: {product.sku || 'N/A'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-red-600">{product.stock_quantity} unidades</p>
+                          <p className="text-xs text-gray-500">Restantes</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-red-600">{Math.floor(Math.random() * 10 + 1)} unidades</p>
-                        <p className="text-xs text-gray-500">Restantes</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">Todos os produtos com estoque adequado</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
