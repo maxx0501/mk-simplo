@@ -99,11 +99,19 @@
   }
 
   .btn-primary {
-    @apply bg-royal-blue text-white hover:bg-royal-blue/90 transition-colors duration-200;
+    @apply bg-royal-blue text-white transition-colors duration-200;
+  }
+
+  .btn-primary:hover {
+    background-color: hsl(var(--royal-blue) / 0.9);
   }
 
   .btn-accent {
-    @apply bg-golden-yellow text-black hover:bg-golden-yellow/90 transition-colors duration-200 font-semibold;
+    @apply bg-golden-yellow text-black transition-colors duration-200 font-semibold;
+  }
+
+  .btn-accent:hover {
+    background-color: hsl(var(--golden-yellow) / 0.9);
   }
 
   .card-modern {
@@ -111,6 +119,11 @@
   }
 
   .input-modern {
-    @apply rounded-lg border-gray-200 focus:border-royal-blue focus:ring-royal-blue/20;
+    @apply rounded-lg border-gray-200 focus:border-royal-blue;
+  }
+
+  .input-modern:focus {
+    --tw-ring-color: hsl(var(--royal-blue) / 0.2);
+    @apply ring-2;
   }
 }
