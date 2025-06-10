@@ -14,7 +14,6 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  cost: number;
   stock_quantity: number;
   description?: string;
   created_at: string;
@@ -32,7 +31,6 @@ export default function Products() {
   const [formData, setFormData] = useState({
     name: '',
     price: 0,
-    cost: 0,
     stock_quantity: 0,
     description: ''
   });
@@ -50,7 +48,7 @@ export default function Products() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, price, stock_quantity, description, created_at')
         .eq('store_id', storeId)
         .order('created_at', { ascending: false });
 
@@ -78,7 +76,6 @@ export default function Products() {
           .update({
             name: formData.name,
             price: formData.price,
-            cost: formData.cost,
             stock_quantity: formData.stock_quantity,
             description: formData.description
           })
@@ -96,7 +93,6 @@ export default function Products() {
             store_id: user.store_id,
             name: formData.name,
             price: formData.price,
-            cost: formData.cost,
             stock_quantity: formData.stock_quantity,
             description: formData.description
           });
@@ -127,7 +123,6 @@ export default function Products() {
     setFormData({
       name: product.name,
       price: product.price,
-      cost: product.cost,
       stock_quantity: product.stock_quantity,
       description: product.description || ''
     });
@@ -165,7 +160,6 @@ export default function Products() {
     setFormData({
       name: '',
       price: 0,
-      cost: 0,
       stock_quantity: 0,
       description: ''
     });
@@ -188,19 +182,19 @@ export default function Products() {
 
   return (
     <ModernDashboardLayout>
-      <div className="space-y-8 p-6">
+      <div className="space-y-8 p-6 min-h-screen bg-gradient-to-br from-white via-blue-50/30 to-yellow-50/20">
         {/* Header melhorado */}
-        <div className="bg-gradient-to-r from-blue-50 to-yellow-50 p-8 rounded-3xl border border-blue-100 shadow-sm">
+        <div className="bg-gradient-to-r from-white to-blue-50/50 p-8 rounded-3xl border border-blue-100/50 shadow-xl backdrop-blur-sm animate-in slide-in-from-top duration-700">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-3">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent flex items-center gap-3">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent flex items-center gap-3 animate-in fade-in duration-1000">
                 📦 Produtos
               </h1>
               <p className="text-gray-600 text-lg">Gerencie o catálogo da sua loja</p>
             </div>
             <Button 
               onClick={() => setShowForm(true)}
-              className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0"
             >
               <Plus className="mr-2 h-5 w-5" />
               ✨ Novo Produto
@@ -209,7 +203,7 @@ export default function Products() {
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-100/50 animate-in slide-in-from-bottom duration-700">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -217,10 +211,13 @@ export default function Products() {
                 placeholder="🔍 Buscar produtos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="pl-12 h-12 border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/80"
               />
             </div>
-            <Button variant="outline" className="h-12 px-6 border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200">
+            <Button 
+              variant="outline" 
+              className="h-12 px-6 border-gray-200/50 rounded-xl hover:bg-gray-50/80 transition-all duration-300 bg-white/50 backdrop-blur-sm"
+            >
               <Filter className="w-4 h-4 mr-2" />
               🎛️ Filtros
             </Button>
@@ -229,7 +226,7 @@ export default function Products() {
 
         {/* Form */}
         {showForm && (
-          <Card className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <Card className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100/50 overflow-hidden animate-in slide-in-from-top duration-500">
             <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
               <CardTitle className="text-2xl font-bold">
                 {editingProduct ? '✏️ Editar Produto' : '➕ Novo Produto'}
@@ -244,7 +241,7 @@ export default function Products() {
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="h-12 border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/80"
                       required
                     />
                   </div>
@@ -256,19 +253,8 @@ export default function Products() {
                       step="0.01"
                       value={formData.price}
                       onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
-                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="h-12 border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/80"
                       required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cost" className="text-gray-700 font-medium">📊 Custo</Label>
-                    <Input
-                      id="cost"
-                      type="number"
-                      step="0.01"
-                      value={formData.cost}
-                      onChange={(e) => setFormData({...formData, cost: parseFloat(e.target.value) || 0})}
-                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     />
                   </div>
                   <div className="space-y-2">
@@ -278,7 +264,7 @@ export default function Products() {
                       type="number"
                       value={formData.stock_quantity}
                       onChange={(e) => setFormData({...formData, stock_quantity: parseInt(e.target.value) || 0})}
-                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="h-12 border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/80"
                       required
                     />
                   </div>
@@ -289,7 +275,7 @@ export default function Products() {
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="h-12 border-gray-200/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white/50 backdrop-blur-sm hover:bg-white/80"
                     placeholder="Descrição do produto..."
                   />
                 </div>
@@ -297,7 +283,7 @@ export default function Products() {
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0"
                   >
                     {loading ? '⏳ Salvando...' : (editingProduct ? '💾 Atualizar' : '➕ Adicionar')}
                   </Button>
@@ -305,7 +291,7 @@ export default function Products() {
                     type="button" 
                     variant="outline" 
                     onClick={resetForm}
-                    className="px-8 py-3 border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                    className="px-8 py-3 border-gray-200/50 rounded-xl hover:bg-gray-50/80 transition-all duration-300 bg-white/50 backdrop-blur-sm"
                   >
                     ❌ Cancelar
                   </Button>
@@ -321,7 +307,7 @@ export default function Products() {
             {filteredProducts.map((product, index) => (
               <Card 
                 key={product.id} 
-                className="bg-white rounded-2xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
+                className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100/50 hover:shadow-2xl transition-all duration-500 transform hover:scale-105 overflow-hidden animate-in slide-in-from-bottom duration-700"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6 space-y-4">
@@ -342,28 +328,23 @@ export default function Products() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-3 rounded-xl border border-green-200">
+                    <div className="bg-gradient-to-r from-green-50/80 to-green-100/80 p-3 rounded-xl border border-green-200/50 backdrop-blur-sm">
                       <p className="text-sm text-gray-600">💰 Preço</p>
                       <p className="font-bold text-lg text-green-700">R$ {product.price.toFixed(2)}</p>
                     </div>
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200">
-                      <p className="text-sm text-gray-600">📊 Custo</p>
-                      <p className="font-bold text-lg text-blue-700">R$ {product.cost.toFixed(2)}</p>
+                    <div className="bg-gradient-to-r from-purple-50/80 to-purple-100/80 p-3 rounded-xl border border-purple-200/50 backdrop-blur-sm">
+                      <p className="text-sm text-gray-600">📦 Estoque</p>
+                      <p className={`font-bold text-lg ${product.stock_quantity < 10 ? 'text-red-600' : 'text-purple-700'}`}>
+                        {product.stock_quantity} unidades
+                      </p>
                     </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-3 rounded-xl border border-purple-200">
-                    <p className="text-sm text-gray-600">📦 Estoque</p>
-                    <p className={`font-bold text-lg ${product.stock_quantity < 10 ? 'text-red-600' : 'text-purple-700'}`}>
-                      {product.stock_quantity} unidades
-                    </p>
                   </div>
                   
                   <div className="flex gap-2 pt-2">
                     <Button
                       size="sm"
                       onClick={() => handleEdit(product)}
-                      className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-medium rounded-xl transition-all duration-200"
+                      className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-medium rounded-xl transition-all duration-300 hover:scale-105 border-0 shadow-lg"
                     >
                       <Edit className="h-4 w-4 mr-2" />
                       ✏️ Editar
@@ -372,7 +353,7 @@ export default function Products() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleDelete(product.id)}
-                      className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+                      className="border-red-200/50 text-red-600 hover:bg-red-50/80 rounded-xl transition-all duration-300 hover:scale-105 backdrop-blur-sm"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -382,10 +363,10 @@ export default function Products() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white rounded-2xl shadow-xl border border-gray-100">
+          <Card className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100/50 animate-in fade-in duration-1000">
             <CardContent className="text-center py-16">
               <div className="space-y-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-100/80 to-yellow-100/80 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm shadow-lg">
                   <Package className="h-12 w-12 text-blue-500" />
                 </div>
                 <div>
@@ -399,7 +380,7 @@ export default function Products() {
                 {!searchTerm && (
                   <Button 
                     onClick={() => setShowForm(true)}
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0"
                   >
                     <Plus className="w-5 h-5 mr-2" />
                     ✨ Adicionar Primeiro Produto
