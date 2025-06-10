@@ -1,207 +1,109 @@
-import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React, { useEffect, useState } from 'react';
+import { ModernDashboardLayout } from '@/components/layout/ModernDashboardLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { Settings as SettingsIcon, Store, User, Save, Copy, Shield } from 'lucide-react';
+import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 import { supabase } from '@/integrations/supabase/client';
-import { useStoreCreation } from '@/hooks/useStoreCreation';
-import { 
-  Store, 
-  User, 
-  Bell, 
-  Shield, 
-  Palette, 
-  Database,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  DollarSign,
-  Printer,
-  Wifi,
-  Lock
-} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-const Settings = () => {
-  const { toast } = useToast();
-  const { createStore } = useStoreCreation();
-  const [loading, setLoading] = useState(false);
+interface StoreData {
+  id: string;
+  name: string;
+  owner_name: string;
+  email: string;
+  access_code: string;
+  plan_type: string;
+  status: string;
+}
+
+export default function Settings() {
   const [user, setUser] = useState<any>(null);
-  const [hasStore, setHasStore] = useState(false);
-
-  // Estados para criação de loja
-  const [newStoreName, setNewStoreName] = useState('');
-  const [newStoreType, setNewStoreType] = useState('');
-
-  // Estados para as configurações
-  const [storeSettings, setStoreSettings] = useState({
+  const [storeData, setStoreData] = useState<StoreData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    cep: '',
-    cnpj: ''
+    owner_name: '',
+    email: ''
   });
-
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    smsNotifications: false,
-    lowStockAlert: true,
-    newOrderAlert: true,
-    dailyReport: true
-  });
-
-  const [systemSettings, setSystemSettings] = useState({
-    theme: 'light',
-    language: 'pt-BR',
-    currency: 'BRL',
-    timezone: 'America/Sao_Paulo',
-    autoBackup: true,
-    twoFactorAuth: false
-  });
+  const { toast } = useToast();
 
   useEffect(() => {
-    const loadUserData = () => {
-      const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-      setUser(userData);
-      setHasStore(!!userData.store_id);
-      
-      // Carregar dados da loja se existir store_id
-      if (userData.store_id) {
-        loadStoreData(userData.store_id);
-      }
-    };
+    const userData = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
+    setUser(userData);
 
-    loadUserData();
+    if (userData.store_id) {
+      fetchStoreData(userData.store_id);
+    }
   }, []);
 
-  const loadStoreData = async (storeId: string) => {
+  const fetchStoreData = async (storeId: string) => {
     try {
-      const { data: storeData, error } = await supabase
+      const { data, error } = await supabase
         .from('stores')
         .select('*')
         .eq('id', storeId)
         .single();
 
-      if (error) {
-        console.error('Erro ao carregar dados da loja:', error);
-        return;
-      }
-
-      if (storeData) {
-        setStoreSettings({
-          name: storeData.name || '',
-          email: storeData.email || '',
-          phone: storeData.phone || '',
-          address: '',
-          city: '',
-          cep: '',
-          cnpj: storeData.cnpj || ''
+      if (error) throw error;
+      
+      if (data) {
+        setStoreData(data);
+        setFormData({
+          name: data.name || '',
+          owner_name: data.owner_name || '',
+          email: data.email || ''
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar dados da loja:', error);
+      console.error('Erro ao buscar dados da loja:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível carregar os dados da loja",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleCreateStore = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newStoreName.trim() || !newStoreType) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Nome da loja e tipo são obrigatórios",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const success = await createStore(newStoreName, '', '', newStoreType);
-    
-    if (success) {
-      setHasStore(true);
-      setNewStoreName('');
-      setNewStoreType('');
-      
-      // Recarregar dados do usuário
-      const updatedUser = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-      setUser(updatedUser);
-      
-      if (updatedUser.store_id) {
-        loadStoreData(updatedUser.store_id);
-      }
-      
-      toast({
-        title: "Loja criada com sucesso!",
-        description: "Agora você pode configurar os dados da sua loja."
-      });
-    }
-  };
-
-  const handleSaveStoreSettings = async () => {
-    if (!user?.store_id) {
-      toast({
-        title: "Erro",
-        description: "Loja não encontrada",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!storeSettings.name.trim()) {
-      toast({
-        title: "Erro",
-        description: "O nome da loja é obrigatório",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!storeData) return;
 
     setLoading(true);
-    
     try {
       const { error } = await supabase
         .from('stores')
         .update({
-          name: storeSettings.name.trim(),
-          phone: storeSettings.phone,
-          cnpj: storeSettings.cnpj
+          name: formData.name,
+          owner_name: formData.owner_name,
+          email: formData.email
         })
-        .eq('id', user.store_id);
+        .eq('id', storeData.id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Atualizar localStorage com novo nome da loja
+      // Atualizar localStorage
       const updatedUser = {
         ...user,
-        store_name: storeSettings.name.trim()
+        store_name: formData.name
       };
       localStorage.setItem('mksimplo_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-
-      // Forçar atualização da sidebar
       window.dispatchEvent(new Event('storage'));
 
       toast({
-        title: "Configurações salvas",
-        description: "As configurações da loja foram atualizadas com sucesso."
+        title: "✅ Sucesso",
+        description: "Dados atualizados com sucesso!"
       });
+
+      fetchStoreData(storeData.id);
     } catch (error: any) {
-      console.error('Erro ao salvar configurações:', error);
+      console.error('Erro ao salvar:', error);
       toast({
-        title: "Erro ao salvar",
-        description: error.message || "Tente novamente",
+        title: "❌ Erro",
+        description: error.message || "Não foi possível salvar as alterações",
         variant: "destructive"
       });
     } finally {
@@ -209,504 +111,184 @@ const Settings = () => {
     }
   };
 
-  const handleSaveNotifications = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Notificações atualizadas",
-      description: "Suas preferências de notificação foram salvas."
-    });
-    setLoading(false);
+  const copyAccessCode = () => {
+    if (storeData?.access_code) {
+      navigator.clipboard.writeText(storeData.access_code);
+      toast({
+        title: "📋 Copiado!",
+        description: "Código de acesso copiado para a área de transferência"
+      });
+    }
   };
 
-  const handleSaveSystem = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Sistema atualizado",
-      description: "As configurações do sistema foram aplicadas."
-    });
-    setLoading(false);
-  };
+  // Se o usuário não tem loja, mostrar opções de acesso
+  if (!user?.store_id) {
+    return (
+      <ModernDashboardLayout>
+        <StoreAccessOptions />
+      </ModernDashboardLayout>
+    );
+  }
+
+  if (!storeData) {
+    return (
+      <ModernDashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </ModernDashboardLayout>
+    );
+  }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-          <p className="text-gray-600 mt-2">
-            Gerencie as configurações da sua loja e sistema
-          </p>
+    <ModernDashboardLayout>
+      <div className="space-y-8 p-6">
+        {/* Header melhorado */}
+        <div className="bg-gradient-to-r from-blue-50 to-yellow-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent flex items-center gap-3">
+              ⚙️ Configurações
+            </h1>
+            <p className="text-gray-600 text-lg">Gerencie os dados da sua loja</p>
+          </div>
         </div>
 
-        <Tabs defaultValue="store" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="store" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              Loja
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notificações
-            </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Sistema
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Segurança
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Configurações da Loja */}
-          <TabsContent value="store">
-            {!hasStore ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Store className="h-5 w-5" />
-                    Criar Loja
-                  </CardTitle>
-                  <CardDescription>
-                    Você ainda não tem uma loja cadastrada. Crie sua primeira loja para começar.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleCreateStore} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="new-store-name">Nome da Loja *</Label>
-                        <Input
-                          id="new-store-name"
-                          value={newStoreName}
-                          onChange={(e) => setNewStoreName(e.target.value)}
-                          placeholder="Digite o nome da sua loja"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-store-type">Tipo da Loja *</Label>
-                        <Select value={newStoreType} onValueChange={setNewStoreType} required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="roupas">Roupas e Acessórios</SelectItem>
-                            <SelectItem value="alimentacao">Alimentação</SelectItem>
-                            <SelectItem value="eletronicos">Eletrônicos</SelectItem>
-                            <SelectItem value="casa">Casa e Decoração</SelectItem>
-                            <SelectItem value="beleza">Beleza e Cosméticos</SelectItem>
-                            <SelectItem value="esportes">Esportes e Lazer</SelectItem>
-                            <SelectItem value="livros">Livros e Papelaria</SelectItem>
-                            <SelectItem value="pet">Pet Shop</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <Button 
-                        type="submit" 
-                        disabled={loading || !newStoreName.trim() || !newStoreType}
-                      >
-                        {loading ? 'Criando...' : 'Criar Loja'}
-                      </Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Store className="h-5 w-5" />
-                    Informações da Loja
-                  </CardTitle>
-                  <CardDescription>
-                    Configure as informações básicas da sua loja
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="store-name">Nome da Loja *</Label>
-                      <Input
-                        id="store-name"
-                        value={storeSettings.name}
-                        onChange={(e) => setStoreSettings(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Digite o nome da sua loja"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="store-email">E-mail</Label>
-                      <Input
-                        id="store-email"
-                        type="email"
-                        value={storeSettings.email}
-                        onChange={(e) => setStoreSettings(prev => ({ ...prev, email: e.target.value }))}
-                        disabled
-                        className="bg-gray-100"
-                      />
-                      <p className="text-xs text-gray-500">O email não pode ser alterado</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="store-phone">Telefone</Label>
-                      <Input
-                        id="store-phone"
-                        value={storeSettings.phone}
-                        onChange={(e) => setStoreSettings(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="(11) 99999-9999"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="store-cnpj">CNPJ</Label>
-                      <Input
-                        id="store-cnpj"
-                        value={storeSettings.cnpj}
-                        onChange={(e) => setStoreSettings(prev => ({ ...prev, cnpj: e.target.value }))}
-                        placeholder="00.000.000/0000-00"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="store-address">Endereço</Label>
-                      <Input
-                        id="store-address"
-                        value={storeSettings.address}
-                        onChange={(e) => setStoreSettings(prev => ({ ...prev, address: e.target.value }))}
-                        placeholder="Rua, número, bairro"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="store-city">Cidade</Label>
-                      <Input
-                        id="store-city"
-                        value={storeSettings.city}
-                        onChange={(e) => setStoreSettings(prev => ({ ...prev, city: e.target.value }))}
-                        placeholder="Cidade - UF"
-                      />
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={handleSaveStoreSettings} 
-                      disabled={loading || !storeSettings.name.trim()}
-                    >
-                      {loading ? 'Salvando...' : 'Salvar Configurações'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Configurações de Notificações */}
-          <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notificações
-                </CardTitle>
-                <CardDescription>
-                  Configure como e quando receber notificações
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Notificações por E-mail</Label>
-                      <p className="text-sm text-gray-500">Receba alertas importantes por e-mail</p>
-                    </div>
-                    <Switch
-                      checked={notificationSettings.emailNotifications}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-gray-500">Receba notificações no navegador</p>
-                    </div>
-                    <Switch
-                      checked={notificationSettings.pushNotifications}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings(prev => ({ ...prev, pushNotifications: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Alerta de Estoque Baixo</Label>
-                      <p className="text-sm text-gray-500">Seja notificado quando produtos estiverem com estoque baixo</p>
-                    </div>
-                    <Switch
-                      checked={notificationSettings.lowStockAlert}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings(prev => ({ ...prev, lowStockAlert: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Novos Pedidos</Label>
-                      <p className="text-sm text-gray-500">Receba alertas de novos pedidos</p>
-                    </div>
-                    <Switch
-                      checked={notificationSettings.newOrderAlert}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings(prev => ({ ...prev, newOrderAlert: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Relatório Diário</Label>
-                      <p className="text-sm text-gray-500">Receba um resumo diário das vendas</p>
-                    </div>
-                    <Switch
-                      checked={notificationSettings.dailyReport}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings(prev => ({ ...prev, dailyReport: checked }))
-                      }
-                    />
-                  </div>
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Dados da Loja */}
+          <Card className="bg-white rounded-2xl shadow-xl border border-gray-100">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-2xl">
+              <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                <Store className="w-6 h-6" />
+                Dados da Loja
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSave} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-gray-700 font-medium flex items-center gap-2">
+                    🏪 Nome da Loja
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Digite o nome da sua loja"
+                  />
                 </div>
-                
-                <Separator />
-                
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveNotifications} disabled={loading}>
-                    {loading ? 'Salvando...' : 'Salvar Notificações'}
+
+                <div className="space-y-2">
+                  <Label htmlFor="owner_name" className="text-gray-700 font-medium flex items-center gap-2">
+                    👤 Nome do Proprietário
+                  </Label>
+                  <Input
+                    id="owner_name"
+                    value={formData.owner_name}
+                    onChange={(e) => setFormData({...formData, owner_name: e.target.value})}
+                    className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Digite seu nome completo"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-700 font-medium flex items-center gap-2">
+                    📧 Email de Contato
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Digite o email da loja"
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold h-12 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  {loading ? '⏳ Salvando...' : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      💾 Salvar Alterações
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Informações do Sistema */}
+          <Card className="bg-white rounded-2xl shadow-xl border border-gray-100">
+            <CardHeader className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black p-6 rounded-t-2xl">
+              <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                <Shield className="w-6 h-6" />
+                Informações do Sistema
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Código de Acesso */}
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200">
+                <Label className="text-gray-700 font-medium flex items-center gap-2 mb-3">
+                  🔑 Código de Acesso da Loja
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    value={storeData.access_code}
+                    readOnly
+                    className="h-12 bg-white border-gray-200 rounded-xl font-mono text-lg font-bold text-center"
+                  />
+                  <Button
+                    type="button"
+                    onClick={copyAccessCode}
+                    variant="outline"
+                    className="h-12 px-4 border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <p className="text-sm text-gray-600 mt-2">
+                  💡 Compartilhe este código com seus vendedores para que possam acessar o sistema
+                </p>
+              </div>
 
-          {/* Configurações do Sistema */}
-          <TabsContent value="system">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
-                  Sistema
-                </CardTitle>
-                <CardDescription>
-                  Configure preferências do sistema e aparência
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tema</Label>
-                    <Select
-                      value={systemSettings.theme}
-                      onValueChange={(value) => setSystemSettings(prev => ({ ...prev, theme: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="light">Claro</SelectItem>
-                        <SelectItem value="dark">Escuro</SelectItem>
-                        <SelectItem value="auto">Automático</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Idioma</Label>
-                    <Select
-                      value={systemSettings.language}
-                      onValueChange={(value) => setSystemSettings(prev => ({ ...prev, language: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                        <SelectItem value="en-US">English (US)</SelectItem>
-                        <SelectItem value="es-ES">Español</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Moeda</Label>
-                    <Select
-                      value={systemSettings.currency}
-                      onValueChange={(value) => setSystemSettings(prev => ({ ...prev, currency: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="BRL">Real (R$)</SelectItem>
-                        <SelectItem value="USD">Dólar ($)</SelectItem>
-                        <SelectItem value="EUR">Euro (€)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Fuso Horário</Label>
-                    <Select
-                      value={systemSettings.timezone}
-                      onValueChange={(value) => setSystemSettings(prev => ({ ...prev, timezone: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="America/Sao_Paulo">Brasília (GMT-3)</SelectItem>
-                        <SelectItem value="America/New_York">Nova York (GMT-5)</SelectItem>
-                        <SelectItem value="Europe/London">Londres (GMT+0)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Status da Conta */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
+                  <span className="font-medium text-gray-700">📊 Plano Atual:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    storeData.plan_type === 'premium' 
+                      ? 'bg-yellow-400 text-black' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {storeData.plan_type === 'premium' ? '👑 Premium' : '🆓 Gratuito'}
+                  </span>
                 </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Backup Automático</Label>
-                      <p className="text-sm text-gray-500">Fazer backup automático dos dados diariamente</p>
-                    </div>
-                    <Switch
-                      checked={systemSettings.autoBackup}
-                      onCheckedChange={(checked) => 
-                        setSystemSettings(prev => ({ ...prev, autoBackup: checked }))
-                      }
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveSystem} disabled={loading}>
-                    {loading ? 'Salvando...' : 'Salvar Sistema'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Configurações de Segurança */}
-          <TabsContent value="security">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Segurança
-                </CardTitle>
-                <CardDescription>
-                  Gerencie a segurança da sua conta e dados
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Autenticação de Dois Fatores</Label>
-                      <p className="text-sm text-gray-500">Adicione uma camada extra de segurança</p>
-                    </div>
-                    <Switch
-                      checked={systemSettings.twoFactorAuth}
-                      onCheckedChange={(checked) => 
-                        setSystemSettings(prev => ({ ...prev, twoFactorAuth: checked }))
-                      }
-                    />
-                  </div>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                  <span className="font-medium text-gray-700">✅ Status:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    storeData.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {storeData.status === 'active' ? '🟢 Ativo' : '🔴 Inativo'}
+                  </span>
                 </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium">Alterar Senha</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Mantenha sua conta segura com uma senha forte
-                    </p>
-                    <div className="space-y-4 max-w-md">
-                      <div className="space-y-2">
-                        <Label htmlFor="current-password">Senha Atual</Label>
-                        <Input id="current-password" type="password" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-password">Nova Senha</Label>
-                        <Input id="new-password" type="password" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                        <Input id="confirm-password" type="password" />
-                      </div>
-                      <Button>Alterar Senha</Button>
-                    </div>
-                  </div>
+
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                  <span className="font-medium text-gray-700">🏪 ID da Loja:</span>
+                  <span className="font-mono text-sm text-gray-600 bg-white px-2 py-1 rounded border">
+                    {storeData.id.substring(0, 8)}...
+                  </span>
                 </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium">Sessões Ativas</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Gerencie dispositivos conectados à sua conta
-                    </p>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Wifi className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Chrome - Windows</p>
-                            <p className="text-sm text-gray-500">São Paulo, Brasil - Ativo agora</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">Atual</Badge>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gray-100 rounded-lg">
-                            <Phone className="h-4 w-4 text-gray-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">Safari - iPhone</p>
-                            <p className="text-sm text-gray-500">São Paulo, Brasil - 2 horas atrás</p>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          Desconectar
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </DashboardLayout>
+    </ModernDashboardLayout>
   );
-};
-
-export default Settings;
+}
