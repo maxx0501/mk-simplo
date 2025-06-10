@@ -1,12 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { ModernDashboardLayout } from '@/components/layout/ModernDashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart, Plus, Search, TrendingUp, Package, DollarSign } from 'lucide-react';
+import { ShoppingCart, Plus, Calendar, DollarSign, Package, User, TrendingUp, Search } from 'lucide-react';
 import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,10 +21,11 @@ interface Product {
 interface Sale {
   id: string;
   product_name: string;
-  employee_name: string;
-  total_amount: number;
-  sale_date: string;
   quantity: number;
+  unit_price: number;
+  total_amount: number;
+  seller_name: string;
+  created_at: string;
 }
 
 export default function Sales() {
@@ -38,7 +39,8 @@ export default function Sales() {
 
   const [formData, setFormData] = useState({
     product_id: '',
-    quantity: 1
+    quantity: 1,
+    seller_name: ''
   });
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function Sales() {
         .gt('stock_quantity', 0);
 
       if (error) throw error;
-      setProducts(data || []);
+      setProducts((data as Product[]) || []);
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
     }
@@ -68,32 +70,15 @@ export default function Sales() {
 
   const fetchSales = async (storeId: string) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('sales')
-        .select(`
-          id,
-          quantity,
-          total_amount,
-          sale_date,
-          products!inner(name),
-          store_employees(name)
-        `)
+        .select('*')
         .eq('store_id', storeId)
-        .order('sale_date', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (error) throw error;
-      
-      // Transform data to match expected interface
-      const transformedSales = (data || []).map((sale: any) => ({
-        id: sale.id,
-        product_name: sale.products?.name || 'Produto não encontrado',
-        employee_name: sale.store_employees?.name || 'Vendedor',
-        total_amount: sale.total_amount,
-        sale_date: sale.sale_date,
-        quantity: sale.quantity
-      }));
-      
-      setSales(transformedSales);
+      setSales((data as Sale[]) || []);
     } catch (error) {
       console.error('Erro ao buscar vendas:', error);
     }
@@ -101,48 +86,57 @@ export default function Sales() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.store_id || !formData.product_id) return;
+    if (!user?.store_id) return;
+
+    const selectedProduct = products.find(p => p.id === formData.product_id);
+    if (!selectedProduct) {
+      toast({
+        title: "❌ Erro",
+        description: "Selecione um produto válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.quantity > selectedProduct.stock_quantity) {
+      toast({
+        title: "❌ Estoque insuficiente",
+        description: `Apenas ${selectedProduct.stock_quantity} unidades disponíveis`,
+        variant: "destructive"
+      });
+      return;
+    }
 
     setLoading(true);
     try {
-      const selectedProduct = products.find(p => p.id === formData.product_id);
-      if (!selectedProduct) {
-        throw new Error('Produto não encontrado');
-      }
-
-      if (selectedProduct.stock_quantity < formData.quantity) {
-        throw new Error('Estoque insuficiente');
-      }
-
       const totalAmount = selectedProduct.price * formData.quantity;
 
-      // Registrar venda
-      const { error: saleError } = await (supabase as any)
+      const { error: saleError } = await supabase
         .from('sales')
         .insert({
           store_id: user.store_id,
-          product_id: selectedProduct.id,
-          employee_id: user.id,
+          product_id: formData.product_id,
+          product_name: selectedProduct.name,
           quantity: formData.quantity,
           unit_price: selectedProduct.price,
-          total_amount: totalAmount
+          total_amount: totalAmount,
+          seller_name: formData.seller_name || user.email
         });
 
       if (saleError) throw saleError;
 
-      // Atualizar estoque
       const { error: stockError } = await supabase
         .from('products')
-        .update({ 
-          stock_quantity: selectedProduct.stock_quantity - formData.quantity 
+        .update({
+          stock_quantity: selectedProduct.stock_quantity - formData.quantity
         })
-        .eq('id', selectedProduct.id);
+        .eq('id', formData.product_id);
 
       if (stockError) throw stockError;
 
       toast({
-        title: "✅ Sucesso",
-        description: "Venda registrada com sucesso!"
+        title: "✅ Venda registrada!",
+        description: `Venda de R$ ${totalAmount.toFixed(2)} realizada com sucesso`
       });
 
       resetForm();
@@ -163,15 +157,22 @@ export default function Sales() {
   const resetForm = () => {
     setFormData({
       product_id: '',
-      quantity: 1
+      quantity: 1,
+      seller_name: ''
     });
     setShowForm(false);
-    setSearchTerm('');
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const selectedProduct = products.find(p => p.id === formData.product_id);
+  const totalAmount = selectedProduct ? selectedProduct.price * formData.quantity : 0;
+
+  const filteredSales = sales.filter(sale =>
+    sale.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.seller_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalSalesAmount = sales.reduce((acc, sale) => acc + sale.total_amount, 0);
+  const totalItemsSold = sales.reduce((acc, sale) => acc + sale.quantity, 0);
 
   // Se o usuário não tem loja, mostrar opções de acesso
   if (!user?.store_id) {
@@ -186,116 +187,145 @@ export default function Sales() {
     <ModernDashboardLayout>
       <div className="space-y-8 p-6">
         {/* Header melhorado */}
-        <div className="flex justify-between items-center bg-gradient-to-r from-blue-50 to-yellow-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              💰 Vendas
-            </h1>
-            <p className="text-gray-600 text-lg">Registre e acompanhe suas vendas diárias</p>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
-                <Package className="w-4 h-4" />
-                {products.length} produtos disponíveis
-              </span>
-              <span className="flex items-center gap-1">
-                <TrendingUp className="w-4 h-4" />
-                {sales.length} vendas hoje
-              </span>
+        <div className="bg-gradient-to-r from-blue-50 to-yellow-50 p-8 rounded-3xl border border-blue-100 shadow-sm">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="space-y-3">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent flex items-center gap-3">
+                🛒 Vendas
+              </h1>
+              <p className="text-gray-600 text-lg">Registre e acompanhe suas vendas</p>
             </div>
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              💰 Nova Venda
+            </Button>
           </div>
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Nova Venda
-          </Button>
         </div>
 
-        {/* Formulário melhorado */}
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-600 font-medium mb-1">💰 Total em Vendas</p>
+                  <p className="text-3xl font-bold text-green-700">R$ {totalSalesAmount.toFixed(2)}</p>
+                </div>
+                <div className="bg-green-200 p-3 rounded-xl">
+                  <DollarSign className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-600 font-medium mb-1">📦 Itens Vendidos</p>
+                  <p className="text-3xl font-bold text-blue-700">{totalItemsSold}</p>
+                </div>
+                <div className="bg-blue-200 p-3 rounded-xl">
+                  <Package className="h-8 w-8 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-600 font-medium mb-1">📊 Total de Vendas</p>
+                  <p className="text-3xl font-bold text-purple-700">{sales.length}</p>
+                </div>
+                <div className="bg-purple-200 p-3 rounded-xl">
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Formulário de Nova Venda */}
         {showForm && (
           <Card className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
-              <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                <ShoppingCart className="w-6 h-6" />
-                Registrar Nova Venda
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold">💰 Registrar Nova Venda</CardTitle>
+              <CardDescription className="text-blue-100">
+                Preencha os dados da venda abaixo
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="product_search" className="text-gray-700 font-medium">
-                      🔍 Buscar Produto
-                    </Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="product_search"
-                        placeholder="Digite o nome do produto..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity" className="text-gray-700 font-medium">
-                      📦 Quantidade
-                    </Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
-                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    />
-                  </div>
-                </div>
-
-                {searchTerm && (
-                  <div className="space-y-2">
-                    <Label htmlFor="product_id" className="text-gray-700 font-medium">
-                      ✅ Selecionar Produto
-                    </Label>
-                    <Select 
-                      value={formData.product_id} 
-                      onValueChange={(value) => setFormData({...formData, product_id: value})}
-                    >
-                      <SelectTrigger className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                    <Label htmlFor="product_id" className="text-gray-700 font-medium">📦 Produto</Label>
+                    <Select value={formData.product_id} onValueChange={(value) => setFormData({...formData, product_id: value})}>
+                      <SelectTrigger className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
                         <SelectValue placeholder="Selecione um produto" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl border-gray-200">
-                        {filteredProducts.map((product) => (
-                          <SelectItem key={product.id} value={product.id} className="rounded-lg">
-                            <div className="flex justify-between items-center w-full">
-                              <span>{product.name}</span>
-                              <span className="text-green-600 font-semibold ml-2">
-                                R$ {product.price.toFixed(2)} ({product.stock_quantity} em estoque)
-                              </span>
-                            </div>
+                      <SelectContent>
+                        {products.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name} - R$ {product.price.toFixed(2)} (Estoque: {product.stock_quantity})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
 
-                <div className="flex gap-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity" className="text-gray-700 font-medium">🔢 Quantidade</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      max={selectedProduct?.stock_quantity || 999}
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="seller_name" className="text-gray-700 font-medium">👤 Vendedor</Label>
+                    <Input
+                      id="seller_name"
+                      value={formData.seller_name}
+                      onChange={(e) => setFormData({...formData, seller_name: e.target.value})}
+                      className="h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder={user.email}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-gray-700 font-medium">💰 Total da Venda</Label>
+                    <div className="h-12 bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-xl flex items-center px-4">
+                      <span className="text-2xl font-bold text-green-700">
+                        R$ {totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
                   <Button 
                     type="submit" 
                     disabled={loading || !formData.product_id}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold h-12 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   >
-                    {loading ? '⏳ Registrando...' : '💰 Registrar Venda'}
+                    {loading ? '⏳ Registrando...' : '💰 Confirmar Venda'}
                   </Button>
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={resetForm}
-                    className="px-8 h-12 border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                    className="px-8 py-3 border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200"
                   >
                     ❌ Cancelar
                   </Button>
@@ -305,37 +335,36 @@ export default function Sales() {
           </Card>
         )}
 
-        {/* Lista de vendas melhorada */}
-        {sales.length > 0 ? (
-          <Card className="bg-white rounded-2xl shadow-xl border border-gray-100">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
-              <CardTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-                📊 Histórico de Vendas
-                <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                  {sales.length} vendas
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {sales.map((sale, index) => (
-                  <div 
-                    key={sale.id} 
-                    className="flex items-center justify-between p-6 border border-gray-100 rounded-xl hover:shadow-lg transition-all duration-300 hover:border-blue-200 bg-gradient-to-r from-white to-gray-50"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="space-y-2">
+        {/* Busca de Vendas */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              placeholder="🔍 Buscar vendas por produto ou vendedor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+        </div>
+
+        {/* Lista de Vendas */}
+        {filteredSales.length > 0 ? (
+          <div className="space-y-4">
+            {filteredSales.map((sale, index) => (
+              <Card 
+                key={sale.id} 
+                className="bg-white rounded-2xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                    <div>
                       <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
                         📦 {sale.product_name}
-                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                          {sale.quantity}x
-                        </span>
                       </h3>
-                      <p className="text-gray-600 flex items-center gap-2">
-                        👤 <strong>Vendedor:</strong> {sale.employee_name}
-                      </p>
-                      <p className="text-gray-600 flex items-center gap-2">
-                        📅 <strong>Data:</strong> {new Date(sale.sale_date).toLocaleDateString('pt-BR', {
+                      <p className="text-gray-600 text-sm">
+                        {new Date(sale.created_at).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric',
@@ -344,40 +373,50 @@ export default function Sales() {
                         })}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent flex items-center gap-1">
-                        <DollarSign className="w-6 h-6 text-green-600" />
-                        R$ {Number(sale.total_amount).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">Total da venda</p>
+                    
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">👤 Vendedor</p>
+                      <p className="font-medium text-gray-800">{sale.seller_name}</p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">🔢 Quantidade</p>
+                      <p className="font-bold text-lg text-blue-600">{sale.quantity}x</p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">💰 Total</p>
+                      <p className="font-bold text-xl text-green-600">R$ {sale.total_amount.toFixed(2)}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : (
-          <Card className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl shadow-xl border border-gray-100">
+          <Card className="bg-white rounded-2xl shadow-xl border border-gray-100">
             <CardContent className="text-center py-16">
               <div className="space-y-6">
-                <div className="w-24 h-24 mx-auto bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                  <ShoppingCart className="h-12 w-12 text-gray-400" />
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-full flex items-center justify-center mx-auto">
+                  <ShoppingCart className="h-12 w-12 text-blue-500" />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-gray-700">
-                    🎯 Nenhuma venda registrada
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    🛒 Nenhuma venda encontrada
                   </h3>
-                  <p className="text-gray-500 text-lg max-w-md mx-auto">
-                    Comece registrando sua primeira venda e acompanhe o crescimento do seu negócio
+                  <p className="text-gray-600 text-lg mb-6">
+                    {searchTerm ? 'Nenhuma venda corresponde à sua busca' : 'Registre sua primeira venda'}
                   </p>
                 </div>
-                <Button 
-                  onClick={() => setShowForm(true)}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  🚀 Registrar Primeira Venda
-                </Button>
+                {!searchTerm && (
+                  <Button 
+                    onClick={() => setShowForm(true)}
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    💰 Registrar Primeira Venda
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
