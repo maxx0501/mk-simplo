@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Package, Plus, Edit, Trash2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,17 +16,19 @@ interface Product {
   name: string;
   price: number;
   stock_quantity: number;
-  sku: string;
-  description: string;
-  category: string;
+  sku?: string;
+  description?: string;
+  category?: string;
+  created_at: string;
 }
 
-export default function Products() {
+export default function ProductsPage() {
   const [user, setUser] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -48,7 +51,7 @@ export default function Products() {
 
   const fetchProducts = async (storeId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('products')
         .select('*')
         .eq('store_id', storeId)
@@ -73,32 +76,34 @@ export default function Products() {
     setLoading(true);
     try {
       const productData = {
+        store_id: user.store_id,
         name: formData.name,
         price: parseFloat(formData.price),
         stock_quantity: parseInt(formData.stock_quantity),
-        sku: formData.sku,
-        description: formData.description,
-        category: formData.category,
-        store_id: user.store_id
+        sku: formData.sku || null,
+        description: formData.description || null,
+        category: formData.category || null
       };
 
       if (editingProduct) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id);
 
         if (error) throw error;
+        
         toast({
           title: "Sucesso",
           description: "Produto atualizado com sucesso!"
         });
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('products')
           .insert(productData);
 
         if (error) throw error;
+        
         toast({
           title: "Sucesso",
           description: "Produto adicionado com sucesso!"
@@ -107,11 +112,11 @@ export default function Products() {
 
       resetForm();
       fetchProducts(user.store_id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar produto:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível salvar o produto",
+        description: error.message || "Não foi possível salvar o produto",
         variant: "destructive"
       });
     } finally {
@@ -136,7 +141,7 @@ export default function Products() {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('products')
         .delete()
         .eq('id', productId);
@@ -172,6 +177,12 @@ export default function Products() {
     setShowForm(false);
   };
 
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Se o usuário não tem loja, mostrar opções de acesso
   if (!user?.store_id) {
     return (
@@ -188,12 +199,23 @@ export default function Products() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-            <p className="text-gray-500">Gerencie o catálogo da sua loja</p>
+            <p className="text-gray-500">Gerencie o catálogo de produtos da sua loja</p>
           </div>
           <Button onClick={() => setShowForm(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Adicionar Produto
           </Button>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar produtos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
         {/* Form */}
@@ -208,7 +230,7 @@ export default function Products() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Nome *</Label>
+                    <Label htmlFor="name">Nome do Produto *</Label>
                     <Input
                       id="name"
                       value={formData.name}
@@ -217,7 +239,16 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Preço *</Label>
+                    <Label htmlFor="sku">Código SKU</Label>
+                    <Input
+                      id="sku"
+                      value={formData.sku}
+                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                      placeholder="Ex: PRD001"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price">Preço (R$) *</Label>
                     <Input
                       id="price"
                       type="number"
@@ -238,33 +269,27 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input
-                      id="sku"
-                      value={formData.sku}
-                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                    />
-                  </div>
-                  <div>
                     <Label htmlFor="category">Categoria</Label>
                     <Input
                       id="category"
                       value={formData.category}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      placeholder="Ex: Eletrônicos"
                     />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="description">Descrição</Label>
-                  <Input
+                  <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Descrição detalhada do produto"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
-                    {loading ? 'Salvando...' : 'Salvar'}
+                    {loading ? 'Salvando...' : editingProduct ? 'Atualizar' : 'Adicionar'}
                   </Button>
                   <Button type="button" variant="outline" onClick={resetForm}>
                     Cancelar
@@ -276,13 +301,21 @@ export default function Products() {
         )}
 
         {/* Products List */}
-        {products.length > 0 ? (
+        {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Card key={product.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-semibold text-lg">{product.name}</h3>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{product.name}</h3>
+                      {product.sku && (
+                        <p className="text-sm text-gray-600">SKU: {product.sku}</p>
+                      )}
+                      {product.category && (
+                        <p className="text-sm text-gray-600">Categoria: {product.category}</p>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -300,23 +333,29 @@ export default function Products() {
                       </Button>
                     </div>
                   </div>
+                  
                   <div className="space-y-2">
-                    <p className="text-2xl font-bold text-green-600">
-                      R$ {product.price.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Estoque: {product.stock_quantity} unidades
-                    </p>
-                    {product.sku && (
-                      <p className="text-sm text-gray-600">SKU: {product.sku}</p>
-                    )}
-                    {product.category && (
-                      <p className="text-sm text-gray-600">Categoria: {product.category}</p>
-                    )}
-                    {product.description && (
-                      <p className="text-sm text-gray-600">{product.description}</p>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Preço:</span>
+                      <span className="font-semibold">
+                        R$ {product.price.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Estoque:</span>
+                      <span className={`font-semibold ${
+                        product.stock_quantity <= 10 ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {product.stock_quantity} unidades
+                      </span>
+                    </div>
                   </div>
+                  
+                  {product.description && (
+                    <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                      {product.description}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -326,15 +365,20 @@ export default function Products() {
             <CardContent className="text-center py-12">
               <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhum produto cadastrado
+                {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
               </h3>
               <p className="text-gray-500 mb-6">
-                Comece adicionando seu primeiro produto ao catálogo
+                {searchTerm 
+                  ? 'Tente ajustar sua busca ou cadastre um novo produto'
+                  : 'Adicione produtos ao seu catálogo para começar'
+                }
               </p>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Primeiro Produto
-              </Button>
+              {!searchTerm && (
+                <Button onClick={() => setShowForm(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Primeiro Produto
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

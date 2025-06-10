@@ -39,7 +39,7 @@ export const useStoreAccess = () => {
       }
 
       // Verificar se o usuário já está associado a esta loja
-      const { data: existingAssociation } = await supabase
+      const { data: existingAssociation } = await (supabase as any)
         .from('user_stores')
         .select('*')
         .eq('user_id', user.id)
@@ -68,7 +68,7 @@ export const useStoreAccess = () => {
       }
 
       // Criar nova associação como funcionário
-      const { error: associationError } = await supabase
+      const { error: associationError } = await (supabase as any)
         .from('user_stores')
         .insert({
           user_id: user.id,

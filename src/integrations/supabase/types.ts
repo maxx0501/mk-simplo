@@ -48,6 +48,53 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price: number
+          sku: string | null
+          stock_quantity: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price?: number
+          sku?: string | null
+          stock_quantity?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          sku?: string | null
+          stock_quantity?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           created_at: string | null
@@ -112,6 +159,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sales: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          id: string
+          product_id: string
+          quantity: number
+          sale_date: string
+          store_id: string
+          total_amount: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          product_id: string
+          quantity: number
+          sale_date?: string
+          store_id: string
+          total_amount: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          product_id?: string
+          quantity?: number
+          sale_date?: string
+          store_id?: string
+          total_amount?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "store_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       store_employees: {
         Row: {
@@ -254,6 +359,38 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_stores: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stores_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usuarios: {
         Row: {
