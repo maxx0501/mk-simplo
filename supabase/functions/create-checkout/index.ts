@@ -68,11 +68,11 @@ serve(async (req) => {
       logStep("Created new customer", { customerId });
     }
 
-    // Preço de teste: R$ 1,00
+    // Preço fixo para plano Pro
     const priceData = {
       currency: "brl",
-      product_data: { name: "MKsimplo - Plano Pro (TESTE)" },
-      unit_amount: 100, // R$ 1,00
+      product_data: { name: "MKsimplo - Plano Pro" },
+      unit_amount: 4900, // R$ 49,00
       recurring: { interval: "month" },
     };
 

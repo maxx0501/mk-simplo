@@ -62,7 +62,7 @@ export const LoginForm = () => {
         </div>
         <Button 
           type="submit" 
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium"
+          className="w-full bg-blue-600 hover:bg-blue-700"
           disabled={loading}
         >
           {loading ? 'Entrando...' : 'Entrar'}

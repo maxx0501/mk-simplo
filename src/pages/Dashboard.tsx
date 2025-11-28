@@ -1,41 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
-import { ModernDashboardLayout } from '@/components/layout/ModernDashboardLayout';
-import { StatsCard } from '@/components/ui/stats-card';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  DollarSign, 
-  Package, 
-  Users, 
-  TrendingUp, 
-  ShoppingCart,
-  AlertTriangle,
-  Plus
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Package, TrendingUp, AlertTriangle, DollarSign } from 'lucide-react';
 import { StoreAccessOptions } from '@/components/store/StoreAccessOptions';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
 
-const salesData = [
-  { month: 'Jan', vendas: 2400 },
-  { month: 'Fev', vendas: 1398 },
-  { month: 'Mar', vendas: 9800 },
-  { month: 'Abr', vendas: 3908 },
-  { month: 'Mai', vendas: 4800 },
-  { month: 'Jun', vendas: 3800 },
-];
-
-export default function Dashboard() {
-  const navigate = useNavigate();
+const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -43,156 +14,155 @@ export default function Dashboard() {
     setUser(userData);
   }, []);
 
+  // Dados vazios - sistema limpo
+  const stats = {
+    totalProducts: 0,
+    lowStockProducts: 0,
+    todaySales: 0,
+    todayProfit: 0.00
+  };
+
   // Se o usuário não tem loja, mostrar opções de acesso
   if (!user?.store_id) {
     return (
-      <ModernDashboardLayout>
+      <DashboardLayout>
         <StoreAccessOptions />
-      </ModernDashboardLayout>
+      </DashboardLayout>
     );
   }
 
   return (
-    <ModernDashboardLayout>
-      <div className="space-y-8">
-        {/* Welcome Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-          <div>
-            <h1 className="text-4xl font-bold text-dark-blue">
-              Bem-vindo, {user?.email?.split('@')[0]}!
-            </h1>
-            <p className="text-lg text-gray-600 mt-2">
-              Aqui está o resumo do seu negócio hoje
-            </p>
-          </div>
-          <Button className="btn-primary">
-            <Plus className="w-5 h-5 mr-2" />
-            Nova Venda
-          </Button>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Visão geral da sua loja</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Vendas Hoje"
-            value="R$ 2.350"
-            icon={DollarSign}
-            change="+12% desde ontem"
-            trend="up"
-          />
-          <StatsCard
-            title="Produtos em Estoque"
-            value="1.247"
-            icon={Package}
-            change="23 produtos baixos"
-            trend="down"
-          />
-          <StatsCard
-            title="Vendedores Ativos"
-            value="8"
-            icon={Users}
-            change="2 vendas hoje"
-            trend="up"
-          />
-          <StatsCard
-            title="Ticket Médio"
-            value="R$ 156"
-            icon={TrendingUp}
-            change="+5% este mês"
-            trend="up"
-          />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
+              <Package className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalProducts}</div>
+              <p className="text-xs text-muted-foreground">
+                cadastrados no sistema
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{stats.lowStockProducts}</div>
+              <p className="text-xs text-muted-foreground">
+                produtos precisam reposição
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vendas Hoje</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.todaySales}</div>
+              <p className="text-xs text-muted-foreground">
+                itens vendidos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Lucro Hoje</CardTitle>
+              <DollarSign className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                R$ {stats.todayProfit.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                sem vendas hoje
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Charts and Quick Actions */}
+        {/* Empty States */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Chart */}
-          <Card className="card-modern">
+          {/* Low Stock Alert - Empty */}
+          <Card>
             <CardHeader>
-              <CardTitle className="text-dark-blue">Vendas Mensais</CardTitle>
+              <CardTitle className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-gray-400 mr-2" />
+                Produtos com Estoque Baixo
+              </CardTitle>
               <CardDescription>
-                Evolução das vendas nos últimos 6 meses
+                Produtos que precisam de reposição urgente
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value) => [`R$ ${value}`, 'Vendas']}
-                    labelStyle={{ color: '#1E2A38' }}
-                  />
-                  <Bar dataKey="vendas" fill="hsl(var(--golden))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="text-center py-8 text-gray-500">
+                <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm">Nenhum produto com estoque baixo</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Cadastre produtos para monitorar o estoque
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
-          <Card className="card-modern">
+          {/* Recent Sales - Empty */}
+          <Card>
             <CardHeader>
-              <CardTitle className="text-dark-blue">Ações Rápidas</CardTitle>
+              <CardTitle>Vendas Recentes</CardTitle>
               <CardDescription>
-                Acesso rápido às funcionalidades principais
+                Últimas vendas realizadas hoje
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Button 
-                className="w-full justify-start bg-white border-2 border-dark-blue text-dark-blue hover:bg-dark-blue hover:text-white"
-                onClick={() => navigate('/sales')}
-              >
-                <ShoppingCart className="w-5 h-5 mr-3" />
-                Registrar Nova Venda
-              </Button>
-              <Button 
-                className="w-full justify-start bg-white border-2 border-dark-blue text-dark-blue hover:bg-dark-blue hover:text-white"
-                onClick={() => navigate('/products')}
-              >
-                <Package className="w-5 h-5 mr-3" />
-                Adicionar Produto
-              </Button>
-              <Button 
-                className="w-full justify-start bg-white border-2 border-dark-blue text-dark-blue hover:bg-dark-blue hover:text-white"
-                onClick={() => navigate('/users')}
-              >
-                <Users className="w-5 h-5 mr-3" />
-                Gerenciar Vendedores
-              </Button>
-              <Button 
-                className="w-full justify-start bg-white border-2 border-golden text-golden hover:bg-golden hover:text-black"
-                onClick={() => navigate('/reports')}
-              >
-                <TrendingUp className="w-5 h-5 mr-3" />
-                Ver Relatórios
-              </Button>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm">Nenhuma venda hoje</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  As vendas aparecerão aqui quando realizadas
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Alerts */}
-        <Card className="card-modern border-orange-200 bg-orange-50">
+        {/* Plan Status */}
+        <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
-            <CardTitle className="text-orange-800 flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2" />
-              Alertas do Sistema
-            </CardTitle>
+            <CardTitle className="text-blue-800">Status do Plano</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p className="text-orange-700">
-                • 23 produtos com estoque baixo - verificar reposição
-              </p>
-              <p className="text-orange-700">
-                • Backup automático realizado com sucesso às 03:00
-              </p>
-              <p className="text-orange-700">
-                • 2 vendedores não registraram vendas hoje
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-blue-800">Plano Gratuito</p>
+                <p className="text-sm text-blue-600">
+                  {stats.totalProducts}/30 produtos utilizados
+                </p>
+              </div>
+              <Badge className="bg-blue-600">
+                Assinar Plano Pro
+              </Badge>
             </div>
           </CardContent>
         </Card>
       </div>
-    </ModernDashboardLayout>
+    </DashboardLayout>
   );
-}
+};
+
+export default Dashboard;

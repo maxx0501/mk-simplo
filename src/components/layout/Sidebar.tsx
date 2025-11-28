@@ -24,7 +24,7 @@ const navigationItems = [
   { name: 'Vendas', href: '/sales', icon: ShoppingCart },
   { name: 'Estoque', href: '/inventory', icon: ArrowUp },
   { name: 'Relatórios', href: '/reports', icon: TrendingUp },
-  { name: 'Vendedores', href: '/users', icon: Users },
+  { name: 'Usuários', href: '/users', icon: Users },
   { name: 'Assinatura', href: '/subscription', icon: Crown },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ];
@@ -102,20 +102,20 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-gray-900 border-r border-gray-800 min-h-screen flex flex-col">
+    <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
       <div className="flex flex-col flex-grow">
         {/* Logo */}
         <div className="flex items-center flex-shrink-0 px-4 pt-5">
           <Store className="h-8 w-8 text-blue-400" />
-          <span className="ml-2 text-xl font-bold text-white">MKsimplo</span>
+          <span className="ml-2 text-xl font-bold text-sidebar-foreground">MKsimplo</span>
         </div>
 
         {/* Store Name */}
         <div className="mt-5 px-4">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          <p className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider">
             Loja
           </p>
-          <p className="text-sm font-medium text-white mt-1">
+          <p className="text-sm font-medium text-sidebar-foreground mt-1">
             {user?.store_name || 'Sem loja definida'}
           </p>
         </div>
@@ -129,8 +129,8 @@ export const Sidebar = () => {
               className={({ isActive }) =>
                 cn(
                   isActive
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors'
                 )
               }
@@ -145,14 +145,14 @@ export const Sidebar = () => {
         </nav>
 
         {/* User info and logout */}
-        <div className="flex-shrink-0 flex border-t border-gray-800 p-4 mt-auto">
+        <div className="flex-shrink-0 flex border-t border-sidebar-border p-4 mt-auto">
           <div className="flex-shrink-0 w-full group block">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-sidebar-foreground">
                   {user?.email}
                 </p>
-                <p className="text-xs font-medium text-gray-400">
+                <p className="text-xs font-medium text-sidebar-foreground/70">
                   {user?.role === 'owner' ? 'Proprietário' : 'Vendedor'}
                 </p>
               </div>
@@ -160,7 +160,7 @@ export const Sidebar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="text-gray-400 hover:text-white hover:bg-gray-800"
+                className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
