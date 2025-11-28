@@ -57,6 +57,10 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     // Não bloquear a criação da loja por isso
   }
 
+  // Gerar código de acesso único para a loja
+  const { data: accessCodeData } = await supabase.rpc('generate_store_access_code');
+  const accessCode = accessCodeData || 'TEMP' + Math.random().toString(36).substr(2, 4).toUpperCase();
+
   // Criar a loja com dados obrigatórios corretamente preenchidos
   console.log('Criando loja na tabela stores...');
   const storeData = {
@@ -69,7 +73,8 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
     status: 'active', // Garantir que seja preenchido
     subscription_status: 'trial', // Garantir que seja preenchido
     trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    user_id: user.id
+    user_id: user.id,
+    access_code: accessCode
   };
 
   console.log('Dados da loja a serem inseridos:', storeData);
@@ -113,7 +118,7 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
   }
 
   console.log('Associação criada com sucesso');
-  console.log('✅ Nova loja criada com campos obrigatórios preenchidos corretamente');
+  console.log('✅ Nova loja criada com ID:', accessCode);
 
   // Retornar dados da loja criada
   return {
@@ -122,7 +127,8 @@ export const createNewStore = async (storeName: string, phone?: string, cnpj?: s
       id: newStoreData.id,
       name: newStoreData.name,
       email: newStoreData.email,
-      owner_name: newStoreData.owner_name
+      owner_name: newStoreData.owner_name,
+      access_code: newStoreData.access_code
     },
     userData: {
       id: user.id,

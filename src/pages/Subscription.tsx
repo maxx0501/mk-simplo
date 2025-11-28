@@ -147,124 +147,133 @@ const Subscription = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center">
-              <Crown className="w-8 h-8 mr-3 text-purple-600" />
-              Assinatura
-            </h1>
-            <p className="text-gray-600 mt-1">Gerencie seu plano e pagamentos</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-6 space-y-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold flex items-center text-black">
+                <Crown className="w-10 h-10 mr-4 text-blue-600" />
+                Assinatura
+              </h1>
+              <p className="text-gray-600 mt-2 text-lg">Gerencie seu plano e pagamentos</p>
+            </div>
+            <Button 
+              onClick={checkSubscription} 
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Atualizar Status
+            </Button>
           </div>
-          <Button onClick={checkSubscription} variant="outline">
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Atualizar Status
-          </Button>
-        </div>
 
-        {/* Current Plan Status */}
-        {subscriptionInfo && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
-                Status da Assinatura
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">Plano Atual</div>
-                  <Badge className={
-                    subscriptionInfo.plan_type === 'trial' ? 'bg-yellow-100 text-yellow-800' :
-                    subscriptionInfo.plan_type === 'pro' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'
-                  }>
-                    {subscriptionInfo.plan_type === 'trial' ? 'Período de Teste' :
-                     subscriptionInfo.plan_type === 'pro' ? 'Pro' : 'Desconhecido'}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">Status</div>
-                  <Badge className={
-                    subscriptionInfo.subscribed && !isTrialExpired() 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }>
-                    {subscriptionInfo.subscribed && !isTrialExpired() ? 'Ativa' : 'Expirada'}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">
-                    {subscriptionInfo.plan_type === 'trial' ? 'Teste expira em' : 'Próxima cobrança'}
+          {/* Current Plan Status */}
+          {subscriptionInfo && (
+            <Card className="shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-lg">
+                <CardTitle className="flex items-center text-black">
+                  <CreditCard className="w-6 h-6 mr-3 text-blue-600" />
+                  Status da Assinatura
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600 font-medium">Plano Atual</div>
+                    <Badge className={`text-sm px-3 py-1 ${
+                      subscriptionInfo.plan_type === 'trial' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                      subscriptionInfo.plan_type === 'pro' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                      'bg-gray-100 text-gray-800 border-gray-300'
+                    }`}>
+                      {subscriptionInfo.plan_type === 'trial' ? 'Período de Teste' :
+                       subscriptionInfo.plan_type === 'pro' ? 'Pro' : 'Desconhecido'}
+                    </Badge>
                   </div>
-                  <div className="font-medium">
-                    {subscriptionInfo.plan_type === 'trial' 
-                      ? `${getRemainingTrialDays()} dias`
-                      : subscriptionInfo.subscription_end 
-                        ? new Date(subscriptionInfo.subscription_end).toLocaleDateString('pt-BR')
-                        : 'N/A'
-                    }
-                  </div>
-                </div>
-              </div>
 
-              {/* Trial Progress */}
-              {subscriptionInfo.plan_type === 'trial' && (
-                <div className="mt-6 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Progresso do período de teste</span>
-                    <span className="text-sm font-medium">{getRemainingTrialDays()} de 7 dias restantes</span>
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600 font-medium">Status</div>
+                    <Badge className={`text-sm px-3 py-1 ${
+                      subscriptionInfo.subscribed && !isTrialExpired() 
+                        ? 'bg-green-100 text-green-800 border-green-300' 
+                        : 'bg-red-100 text-red-800 border-red-300'
+                    }`}>
+                      {subscriptionInfo.subscribed && !isTrialExpired() ? 'Ativa' : 'Expirada'}
+                    </Badge>
                   </div>
-                  <Progress value={getTrialProgress()} className="h-2" />
-                  {getRemainingTrialDays() <= 2 && (
-                    <div className="flex items-center space-x-2 mt-3 p-3 bg-orange-50 rounded-lg">
-                      <AlertCircle className="w-5 h-5 text-orange-600" />
-                      <span className="text-sm text-orange-700">
-                        {isTrialExpired() 
-                          ? 'Seu período de teste expirou. Assine o plano Pro para continuar usando a plataforma.'
-                          : 'Seu período de teste expira em breve. Assine o plano Pro para continuar usando a plataforma.'
-                        }
-                      </span>
+
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600 font-medium">
+                      {subscriptionInfo.plan_type === 'trial' ? 'Teste expira em' : 'Próxima cobrança'}
                     </div>
-                  )}
+                    <div className="font-medium text-black">
+                      {subscriptionInfo.plan_type === 'trial' 
+                        ? `${getRemainingTrialDays()} dias`
+                        : subscriptionInfo.subscription_end 
+                          ? new Date(subscriptionInfo.subscription_end).toLocaleDateString('pt-BR')
+                          : 'N/A'
+                      }
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Trial Progress */}
+                {subscriptionInfo.plan_type === 'trial' && (
+                  <div className="mt-8 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 font-medium">Progresso do período de teste</span>
+                      <span className="text-sm font-semibold text-black">{getRemainingTrialDays()} de 7 dias restantes</span>
+                    </div>
+                    <Progress value={getTrialProgress()} className="h-3" />
+                    {getRemainingTrialDays() <= 2 && (
+                      <div className="flex items-center space-x-3 mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0" />
+                        <span className="text-sm text-orange-700">
+                          {isTrialExpired() 
+                            ? 'Seu período de teste expirou. Assine o plano Pro para continuar usando a plataforma.'
+                            : 'Seu período de teste expira em breve. Assine o plano Pro para continuar usando a plataforma.'
+                          }
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Manage Subscription Button */}
+          {subscriptionInfo?.plan_type === 'pro' && (
+            <Card className="shadow-lg border-0 bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-black">Gerenciar Assinatura</h3>
+                    <p className="text-gray-600 mt-1">Altere seu método de pagamento ou cancele sua assinatura</p>
+                  </div>
+                  <Button 
+                    onClick={handleManageSubscription}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Gerenciar no Stripe
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Subscription Plans */}
+          <Card className="shadow-lg border-0 bg-white">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-lg">
+              <CardTitle className="text-black text-2xl">Planos Disponíveis</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <SubscriptionPlans 
+                currentPlan={subscriptionInfo?.plan_type}
+                onPlanChange={checkSubscription}
+              />
             </CardContent>
           </Card>
-        )}
-
-        {/* Manage Subscription Button */}
-        {subscriptionInfo?.plan_type === 'pro' && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium">Gerenciar Assinatura</h3>
-                  <p className="text-gray-600">Altere seu método de pagamento ou cancele sua assinatura</p>
-                </div>
-                <Button onClick={handleManageSubscription}>
-                  Gerenciar no Stripe
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Subscription Plans */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Planos Disponíveis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SubscriptionPlans 
-              currentPlan={subscriptionInfo?.plan_type}
-              onPlanChange={checkSubscription}
-            />
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </DashboardLayout>
   );
