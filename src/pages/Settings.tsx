@@ -44,16 +44,20 @@ export default function Settings() {
     try {
       const { data, error } = await supabase
         .from('stores')
-        .select('name, phone, address')
+        .select('*')
         .eq('id', storeId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar dados da loja:', error);
+        return;
+      }
+      
       if (data) {
         setStoreData({
-          name: data.name || '',
-          phone: data.phone || '',
-          address: data.address || ''
+          name: (data as any).name || '',
+          phone: (data as any).phone || '',
+          address: (data as any).address || ''
         });
       }
     } catch (error) {
@@ -66,16 +70,28 @@ export default function Settings() {
 
     setLoading(true);
     try {
+      const updateData: any = {
+        name: storeData.name
+      };
+      
+      // Adicionar campos opcionais se existirem
+      if (storeData.phone) updateData.phone = storeData.phone;
+      if (storeData.address) updateData.address = storeData.address;
+      
       const { error } = await supabase
         .from('stores')
-        .update({
-          name: storeData.name,
-          phone: storeData.phone,
-          address: storeData.address
-        })
+        .update(updateData)
         .eq('id', user.store_id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar loja:', error);
+        toast({
+          title: "❌ Erro",
+          description: "A tabela 'stores' ainda não foi criada no banco de dados",
+          variant: "destructive"
+        });
+        return;
+      }
 
       toast({
         title: "✅ Sucesso",
