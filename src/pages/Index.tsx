@@ -1,74 +1,9 @@
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Store, Users, BarChart3, Shield, CheckCircle, ArrowRight, ShoppingCart, UserCheck, CreditCard, Clock, Star, Zap, Package, TrendingUp, HeartHandshake, Settings } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Store, Users, BarChart3, Shield, CheckCircle, ArrowRight, ShoppingCart, Package, TrendingUp, Settings, Zap, Clock, Star, HeartHandshake } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [showEmployeeLogin, setShowEmployeeLogin] = useState(false);
-  const [employeeLoginData, setEmployeeLoginData] = useState({
-    storeId: '',
-    login: '',
-    password: ''
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleEmployeeLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.rpc('authenticate_employee', {
-        store_id_param: employeeLoginData.storeId,
-        login_param: employeeLoginData.login,
-        password_param: employeeLoginData.password
-      });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        throw new Error('ID da loja, login ou senha incorretos');
-      }
-
-      const employee = data[0];
-      
-      // Salvar dados do vendedor no localStorage
-      const userData = {
-        id: employee.employee_id,
-        email: employeeLoginData.login,
-        role: 'employee',
-        store_id: employeeLoginData.storeId,
-        store_name: employee.store_name,
-        employee_name: employee.employee_name
-      };
-
-      localStorage.setItem('mksimplo_user', JSON.stringify(userData));
-      
-      toast({
-        title: "Login realizado com sucesso!",
-        description: `Bem-vindo, ${employee.employee_name}!`
-      });
-
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Erro no login do vendedor:', error);
-      toast({
-        title: "Erro no login",
-        description: error.message || "Verifique as credenciais e tente novamente",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const features = [
     {
       icon: Store,
@@ -127,10 +62,10 @@ const Index = () => {
     {
       name: "Período de Teste",
       price: "Grátis",
-      duration: "7 dias",
+      duration: "30 dias",
       features: [
-        "Até 100 produtos",
-        "2 vendedores",
+        "Produtos ilimitados",
+        "Vendedores ilimitados",
         "Relatórios básicos",
         "Suporte por email"
       ],
@@ -173,14 +108,6 @@ const Index = () => {
                   Começar Teste
                 </Button>
               </Link>
-              <Button 
-                variant="outline"
-                onClick={() => setShowEmployeeLogin(true)}
-                className="bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
-              >
-                <UserCheck className="w-4 h-4 mr-2" />
-                Login Vendedor
-              </Button>
               <Link to="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   Entrar
@@ -217,65 +144,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Employee Login Modal */}
-      {showEmployeeLogin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Login de Vendedor</CardTitle>
-              <CardDescription>
-                Entre com as credenciais fornecidas pelo proprietário da loja
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleEmployeeLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="storeId">ID da Loja *</Label>
-                  <Input
-                    id="storeId"
-                    value={employeeLoginData.storeId}
-                    onChange={(e) => setEmployeeLoginData({...employeeLoginData, storeId: e.target.value})}
-                    placeholder="ID fornecido pelo proprietário"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="login">Login *</Label>
-                  <Input
-                    id="login"
-                    value={employeeLoginData.login}
-                    onChange={(e) => setEmployeeLoginData({...employeeLoginData, login: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Senha *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={employeeLoginData.password}
-                    onChange={(e) => setEmployeeLoginData({...employeeLoginData, password: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    {loading ? 'Entrando...' : 'Entrar'}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setShowEmployeeLogin(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Features Section */}
       <section className="py-20 bg-white">
@@ -330,14 +198,14 @@ const Index = () => {
                     </div>
                   </div>
                 )}
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold text-blue-600">{plan.price}</span>
-                    <span className="text-gray-600 ml-1">{plan.duration}</span>
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                    <div className="mt-4">
+                      <span className="text-4xl font-bold text-blue-600">{plan.price}</span>
+                      <span className="text-gray-600 ml-1">{plan.duration}</span>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center">

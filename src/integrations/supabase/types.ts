@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string | null
@@ -145,40 +178,37 @@ export type Database = {
           },
         ]
       }
-      store_employees: {
+      store_access_requests: {
         Row: {
           created_at: string | null
-          email: string
           id: string
-          name: string
-          role: string | null
-          store_id: string | null
+          message: string | null
+          status: string | null
+          store_id: string
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
-          email: string
           id?: string
-          name: string
-          role?: string | null
-          store_id?: string | null
+          message?: string | null
+          status?: string | null
+          store_id: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
-          email?: string
           id?: string
-          name?: string
-          role?: string | null
-          store_id?: string | null
+          message?: string | null
+          status?: string | null
+          store_id?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "store_employees_store_id_fkey"
+            foreignKeyName: "store_access_requests_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -198,6 +228,7 @@ export type Database = {
           owner_name: string | null
           phone: string | null
           plan_type: string | null
+          search_name: string | null
           status: string | null
           subscription_id: string | null
           subscription_status: string | null
@@ -216,6 +247,7 @@ export type Database = {
           owner_name?: string | null
           phone?: string | null
           plan_type?: string | null
+          search_name?: string | null
           status?: string | null
           subscription_id?: string | null
           subscription_status?: string | null
@@ -234,6 +266,7 @@ export type Database = {
           owner_name?: string | null
           phone?: string | null
           plan_type?: string | null
+          search_name?: string | null
           status?: string | null
           subscription_id?: string | null
           subscription_status?: string | null
@@ -247,21 +280,30 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          invited_at: string | null
+          invited_by: string | null
           role: string | null
+          status: string | null
           store_id: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          invited_at?: string | null
+          invited_by?: string | null
           role?: string | null
+          status?: string | null
           store_id?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          invited_at?: string | null
+          invited_by?: string | null
           role?: string | null
+          status?: string | null
           store_id?: string | null
           user_id?: string | null
         }
@@ -280,6 +322,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_notification: {
+        Args: {
+          p_data?: Json
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       generate_store_access_code: { Args: never; Returns: string }
     }
     Enums: {

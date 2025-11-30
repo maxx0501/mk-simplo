@@ -46,11 +46,12 @@ export const loginUser = async (email: string, password: string) => {
     console.log('⚠️ Erro ao verificar admin, continuando como usuário normal:', profileCheckError);
   }
 
-  // Buscar dados da loja do usuário
+  // Buscar dados da loja do usuário (apenas lojas ativas)
   const { data: userStoreData } = await supabase
     .from('user_stores')
     .select('*, stores(*)')
     .eq('user_id', data.user.id)
+    .eq('status', 'active')
     .maybeSingle();
 
   if (userStoreData && userStoreData.stores) {
@@ -74,11 +75,11 @@ export const loginUser = async (email: string, password: string) => {
     userData: {
       id: data.user.id,
       email: data.user.email,
-      role: 'owner',
+      role: null,
       store_id: null,
       store_name: null
     },
-    redirectTo: '/dashboard'
+    redirectTo: '/store-choice'
   };
 };
 

@@ -20,11 +20,11 @@ interface Product {
 
 interface Sale {
   id: string;
-  product_name: string;
-  product_value: number;
-  employee_name: string;
+  product_id: string;
+  quantity: number;
+  total_price: number;
   sale_date: string;
-  notes: string;
+  created_at: string;
 }
 
 export default function Sales() {
@@ -38,7 +38,7 @@ export default function Sales() {
 
   const [formData, setFormData] = useState({
     product_id: '',
-    notes: ''
+    quantity: 1
   });
 
   useEffect(() => {
@@ -93,8 +93,8 @@ export default function Sales() {
         throw new Error('Produto não encontrado');
       }
 
-      if (selectedProduct.stock_quantity <= 0) {
-        throw new Error('Produto sem estoque disponível');
+      if (selectedProduct.stock_quantity < formData.quantity) {
+        throw new Error('Estoque insuficiente');
       }
 
       // Registrar venda
@@ -102,11 +102,9 @@ export default function Sales() {
         .from('sales')
         .insert({
           store_id: user.store_id,
-          employee_id: user.id,
-          employee_name: user.email?.split('@')[0] || 'Vendedor',
-          product_name: selectedProduct.name,
-          product_value: selectedProduct.price,
-          notes: formData.notes
+          product_id: selectedProduct.id,
+          quantity: formData.quantity,
+          total_price: selectedProduct.price * formData.quantity
         });
 
       if (saleError) throw saleError;
@@ -115,7 +113,7 @@ export default function Sales() {
       const { error: stockError } = await supabase
         .from('products')
         .update({ 
-          stock_quantity: selectedProduct.stock_quantity - 1 
+          stock_quantity: selectedProduct.stock_quantity - formData.quantity 
         })
         .eq('id', selectedProduct.id);
 
@@ -144,7 +142,7 @@ export default function Sales() {
   const resetForm = () => {
     setFormData({
       product_id: '',
-      notes: ''
+      quantity: 1
     });
     setShowForm(false);
     setSearchTerm('');
@@ -219,12 +217,14 @@ export default function Sales() {
                 )}
 
                 <div>
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="quantity">Quantidade *</Label>
                   <Input
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    placeholder="Observações sobre a venda (opcional)"
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                    required
                   />
                 </div>
 
@@ -252,20 +252,17 @@ export default function Sales() {
                 {sales.map((sale) => (
                   <div key={sale.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
-                      <h3 className="font-semibold">{sale.product_name}</h3>
+                      <h3 className="font-semibold">Venda #{sale.id.substring(0, 8)}</h3>
                       <p className="text-sm text-gray-600">
-                        Vendedor: {sale.employee_name}
+                        Quantidade: {sale.quantity} unidades
                       </p>
                       <p className="text-sm text-gray-600">
-                        Data: {new Date(sale.sale_date).toLocaleDateString('pt-BR')}
+                        Data: {new Date(sale.sale_date || sale.created_at).toLocaleDateString('pt-BR')}
                       </p>
-                      {sale.notes && (
-                        <p className="text-sm text-gray-600">Obs: {sale.notes}</p>
-                      )}
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-bold text-green-600">
-                        R$ {Number(sale.product_value).toFixed(2)}
+                        R$ {Number(sale.total_price).toFixed(2)}
                       </p>
                     </div>
                   </div>
