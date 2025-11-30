@@ -15,9 +15,7 @@ interface Product {
   name: string;
   price: number;
   stock_quantity: number;
-  sku: string;
-  description: string;
-  category: string;
+  description?: string;
 }
 
 export default function Products() {
@@ -32,9 +30,7 @@ export default function Products() {
     name: '',
     price: '',
     stock_quantity: '',
-    sku: '',
-    description: '',
-    category: ''
+    description: ''
   });
 
   useEffect(() => {
@@ -76,9 +72,7 @@ export default function Products() {
         name: formData.name,
         price: parseFloat(formData.price),
         stock_quantity: parseInt(formData.stock_quantity),
-        sku: formData.sku,
-        description: formData.description,
-        category: formData.category,
+        description: formData.description || null,
         store_id: user.store_id
       };
 
@@ -125,9 +119,7 @@ export default function Products() {
       name: product.name,
       price: product.price.toString(),
       stock_quantity: product.stock_quantity.toString(),
-      sku: product.sku || '',
-      description: product.description || '',
-      category: product.category || ''
+      description: product.description || ''
     });
     setShowForm(true);
   };
@@ -164,9 +156,7 @@ export default function Products() {
       name: '',
       price: '',
       stock_quantity: '',
-      sku: '',
-      description: '',
-      category: ''
+      description: ''
     });
     setEditingProduct(null);
     setShowForm(false);
@@ -238,29 +228,13 @@ export default function Products() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="sku">SKU</Label>
+                    <Label htmlFor="description">Descrição</Label>
                     <Input
-                      id="sku"
-                      value={formData.sku}
-                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="category">Categoria</Label>
-                    <Input
-                      id="category"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="description">Descrição</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={loading}>
@@ -307,14 +281,8 @@ export default function Products() {
                     <p className="text-sm text-gray-600">
                       Estoque: {product.stock_quantity} unidades
                     </p>
-                    {product.sku && (
-                      <p className="text-sm text-gray-600">SKU: {product.sku}</p>
-                    )}
-                    {product.category && (
-                      <p className="text-sm text-gray-600">Categoria: {product.category}</p>
-                    )}
                     {product.description && (
-                      <p className="text-sm text-gray-600">{product.description}</p>
+                      <p className="text-sm text-gray-600 mt-2">{product.description}</p>
                     )}
                   </div>
                 </CardContent>

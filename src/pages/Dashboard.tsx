@@ -58,7 +58,7 @@ const Dashboard = () => {
       ) || [];
 
       // Calcular receita total
-      const totalRevenue = sales?.reduce((sum, sale) => sum + Number(sale.product_value), 0) || 0;
+      const totalRevenue = sales?.reduce((sum, sale) => sum + Number(sale.total_price), 0) || 0;
 
       // Produtos com estoque baixo (menos de 10 unidades)
       const lowStock = products?.filter(product => product.stock_quantity < 10) || [];
@@ -229,13 +229,15 @@ const Dashboard = () => {
                     recentSales.map((sale, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
-                          <p className="font-medium text-black">{sale.product_name}</p>
-                          <p className="text-sm text-gray-600">{sale.employee_name}</p>
+                          <p className="font-medium text-black">Venda #{index + 1}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(sale.sale_date || sale.created_at).toLocaleDateString('pt-BR')}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-black">R$ {Number(sale.product_value).toFixed(2)}</p>
+                          <p className="font-semibold text-black">R$ {Number(sale.total_price).toFixed(2)}</p>
                           <p className="text-xs text-gray-500">
-                            {new Date(sale.created_at).toLocaleDateString()}
+                            Qtd: {sale.quantity}
                           </p>
                         </div>
                       </div>
@@ -258,7 +260,7 @@ const Dashboard = () => {
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium text-black">{product.name}</p>
-                          <p className="text-sm text-gray-600">SKU: {product.sku || 'N/A'}</p>
+                          <p className="text-sm text-gray-600">R$ {Number(product.price).toFixed(2)}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-red-600">{product.stock_quantity} unidades</p>

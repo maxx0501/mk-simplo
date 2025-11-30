@@ -89,11 +89,11 @@ export const NotificationDropdown = () => {
                           <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                       <p className="text-sm text-gray-600 mt-1">
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {notification.time}
+                        {new Date(notification.created_at).toLocaleString('pt-BR')}
                       </p>
                     </div>
                   </div>
