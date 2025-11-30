@@ -1,196 +1,35 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, RefreshCw, Copy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { NotificationDropdown } from '../NotificationDropdown';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-interface SubscriptionInfo {
-  subscribed: boolean;
-  plan_type: string;
-  trial_end?: string;
-}
+import { Bell, Menu } from 'lucide-react';
 
 export const DashboardHeader = () => {
-  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [storeCode, setStoreCode] = useState<string>('');
   const user = JSON.parse(localStorage.getItem('mksimplo_user') || '{}');
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  // Extrair nome do usuário do email ou usar o nome completo se disponível
-  const getUserDisplayName = () => {
-    if (user.full_name) {
-      return user.full_name;
-    }
-    if (user.email) {
-      return user.email.split('@')[0];
-    }
-    return 'Usuário';
-  };
-
-  const fetchStoreCode = async () => {
-    if (!user.store_id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('access_code')
-        .eq('id', user.store_id)
-        .single();
-      
-      if (!error && data) {
-        setStoreCode(data.access_code || '');
-      }
-    } catch (error) {
-      console.error('Erro ao buscar código da loja:', error);
-    }
-  };
-
-  const copyStoreCode = () => {
-    if (storeCode) {
-      navigator.clipboard.writeText(storeCode);
-      toast({
-        title: "Código copiado!",
-        description: "ID da loja copiado para a área de transferência"
-      });
-    }
-  };
-
-  const checkSubscription = async (showLoading = false) => {
-    try {
-      if (showLoading) setRefreshing(true);
-      
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (!error && data) {
-        setSubscriptionInfo(data);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar assinatura:', error);
-    } finally {
-      if (showLoading) setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    checkSubscription();
-    fetchStoreCode();
-    // Verificar a cada 30 segundos
-    const interval = setInterval(() => checkSubscription(), 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handlePlanClick = () => {
-    navigate('/subscription');
-  };
-
-  const handleRefresh = () => {
-    checkSubscription(true);
-  };
-
-  const getPlanDisplay = () => {
-    if (!subscriptionInfo) return 'Verificando...';
-    
-    if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'Plano Pro';
-    }
-    
-    if (subscriptionInfo.plan_type === 'trial') {
-      const trialEnd = subscriptionInfo.trial_end ? new Date(subscriptionInfo.trial_end) : null;
-      const now = new Date();
-      const remainingDays = trialEnd ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-      
-      if (remainingDays > 0) {
-        return `Teste (${remainingDays}d)`;
-      } else {
-        return 'Teste Expirado';
-      }
-    }
-    
-    return 'Plano Gratuito';
-  };
-
-  const getPlanColor = () => {
-    if (!subscriptionInfo) return 'text-gray-600 border-gray-600 bg-gray-50';
-    
-    if (subscriptionInfo.plan_type === 'pro' && subscriptionInfo.subscribed) {
-      return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
-    }
-    
-    if (subscriptionInfo.plan_type === 'trial') {
-      const trialEnd = subscriptionInfo.trial_end ? new Date(subscriptionInfo.trial_end) : null;
-      const now = new Date();
-      const remainingDays = trialEnd ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-      
-      if (remainingDays > 0) {
-        return remainingDays <= 2 
-          ? 'text-orange-700 border-orange-300 bg-orange-50 hover:bg-orange-100' 
-          : 'text-green-700 border-green-300 bg-green-50 hover:bg-green-100';
-      } else {
-        return 'text-red-700 border-red-300 bg-red-50 hover:bg-red-100';
-      }
-    }
-    
-    return 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100';
-  };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
           <div className="ml-4 md:ml-0">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-black">
-                {user.store_name || 'Empresa Exemplo'}
-              </h2>
-              {storeCode && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={copyStoreCode}
-                  className="text-xs px-2 py-1 h-6"
-                >
-                  <Copy className="h-3 w-3 mr-1" />
-                  ID: {storeCode}
-                </Button>
-              )}
-            </div>
-            <p className="text-sm text-gray-500">
-              Bem-vindo, {getUserDisplayName()}
-            </p>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {user.store_name || 'Loja Exemplo'}
+            </h2>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </Button>
-          
-          <Badge 
-            variant="outline" 
-            className={`${getPlanColor()} cursor-pointer transition-all duration-200 font-medium px-3 py-1 border-2`}
-            onClick={handlePlanClick}
-          >
-            {getPlanDisplay()}
+          <Badge variant="outline" className="text-blue-600 border-blue-600">
+            Plano Gratuito
           </Badge>
           
-          <NotificationDropdown />
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
+          </Button>
         </div>
       </div>
     </header>

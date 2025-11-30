@@ -1,116 +1,28 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Store, Users, BarChart3, Shield, CheckCircle, ArrowRight, ShoppingCart, Package, TrendingUp, Settings, Zap, Clock, Star, HeartHandshake } from "lucide-react";
-import { Link } from "react-router-dom";
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, Store, BarChart3, Users, Package } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
-  const features = [
-    {
-      icon: Store,
-      title: "Gestão de Loja",
-      description: "Sistema completo para gerenciar sua loja física ou virtual"
-    },
-    {
-      icon: Users,
-      title: "Equipe de Vendas",
-      description: "Cadastre vendedores e acompanhe o desempenho da equipe"
-    },
-    {
-      icon: BarChart3,
-      title: "Relatórios Detalhados",
-      description: "Análise completa de vendas, estoque e performance"
-    },
-    {
-      icon: Shield,
-      title: "Seguro e Confiável",
-      description: "Seus dados protegidos com a mais alta segurança"
-    },
-    {
-      icon: Package,
-      title: "Controle de Estoque",
-      description: "Monitore produtos, quantidades e movimentações em tempo real"
-    },
-    {
-      icon: TrendingUp,
-      title: "Dashboard Inteligente",
-      description: "Visualize métricas importantes e tome decisões baseadas em dados"
-    },
-    {
-      icon: Zap,
-      title: "Vendas Rápidas",
-      description: "Interface otimizada para registrar vendas de forma ágil"
-    },
-    {
-      icon: Settings,
-      title: "Configurações Flexíveis",
-      description: "Personalize o sistema de acordo com suas necessidades"
-    }
-  ];
-
-  const benefits = [
-    "✓ Controle total do estoque",
-    "✓ Gestão de vendedores",
-    "✓ Relatórios em tempo real",
-    "✓ Interface simples e intuitiva",
-    "✓ Suporte técnico dedicado",
-    "✓ Backups automáticos",
-    "✓ Acesso via web em qualquer lugar",
-    "✓ Integração com múltiplos dispositivos"
-  ];
-
-  const pricingPlans = [
-    {
-      name: "Período de Teste",
-      price: "Grátis",
-      duration: "30 dias",
-      features: [
-        "Produtos ilimitados",
-        "Vendedores ilimitados",
-        "Relatórios básicos",
-        "Suporte por email"
-      ],
-      popular: true,
-      buttonText: "Começar Teste",
-      buttonVariant: "default" as const
-    },
-    {
-      name: "Plano Pro",
-      price: "R$ 49,99",
-      duration: "/mês",
-      features: [
-        "Produtos ilimitados",
-        "Vendedores ilimitados",
-        "Relatórios avançados",
-        "Suporte prioritário",
-        "Backup automático",
-        "Integrações avançadas"
-      ],
-      popular: false,
-      buttonText: "Escolher Pro",
-      buttonVariant: "outline" as const
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
+      <header className="border-b bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
               <Store className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">MKsimplo</span>
+              <h1 className="text-2xl font-bold text-gray-900">MKsimplo</h1>
             </div>
-            <div className="flex gap-4 items-center">
-              <Link to="/register">
-                <Button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Começar Teste
-                </Button>
-              </Link>
+            <div className="flex space-x-4">
               <Link to="/login">
+                <Button variant="outline">Entrar</Button>
+              </Link>
+              <Link to="/register">
                 <Button className="bg-blue-600 hover:bg-blue-700">
-                  Entrar
+                  Começar grátis
                 </Button>
               </Link>
             </div>
@@ -119,189 +31,134 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Gerencie sua loja com
-            <span className="text-blue-600"> simplicidade</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Sistema completo para controle de estoque, vendas e equipe. 
-            Tudo que você precisa para fazer sua loja crescer.
+      <section className="py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-5xl font-bold text-gray-900 mb-6">
+            Controle total da sua loja de roupas
+          </h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Sistema completo para gestão de estoque, vendas, lucro e catálogo online. 
+            Feito especialmente para lojas de pequeno porte.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register">
-              <Button size="lg" className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Começar período de teste
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button size="lg" variant="outline" className="bg-white border-gray-300 text-gray-800 hover:bg-gray-50">
-                Já tenho conta
-              </Button>
-            </Link>
+          <Link to="/register">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4">
+              Começar grátis agora
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Tudo que sua loja precisa
+          </h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="text-center">
+              <CardHeader>
+                <Package className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <CardTitle>Controle de Estoque</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Gerencie produtos, entradas e alertas de estoque baixo
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <CardTitle>Relatórios de Lucro</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Acompanhe vendas e lucro diário, semanal e mensal
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <Store className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <CardTitle>Catálogo Online</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Sua loja online com link direto para WhatsApp
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <CardTitle>Multiusuário</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>
+                  Adicione vendedores com permissões específicas
+                </CardDescription>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Por que escolher o MKsimplo?
-            </h2>
-            <p className="text-xl text-gray-600">
-              Recursos pensados para facilitar o dia a dia da sua loja
-            </p>
-          </div>
+      {/* Pricing */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Planos que cabem no seu bolso
+          </h3>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="border-2">
+              <CardHeader>
+                <CardTitle className="text-2xl">Plano Gratuito</CardTitle>
+                <CardDescription>Para começar</CardDescription>
+                <div className="text-3xl font-bold">R$ 0</div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-gray-600">
+                  <li>• Até 30 produtos</li>
+                  <li>• Controle de estoque básico</li>
+                  <li>• Registro de vendas</li>
+                  <li>• 1 usuário</li>
+                </ul>
+              </CardContent>
+            </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <feature.icon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Planos que se adaptam ao seu negócio
-            </h2>
-            <p className="text-xl text-gray-600">
-              Comece com o período de teste e evolua conforme sua necessidade
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`relative ${plan.popular ? 'border-2 border-yellow-400 shadow-lg' : ''}`}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-semibold flex items-center">
-                      <Star className="w-4 h-4 mr-1" />
-                      Mais Popular
-                    </div>
-                  </div>
-                )}
-                <CardContent className="p-6">
-                  <div className="text-center mb-4">
-                    <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
-                    <div className="mt-4">
-                      <span className="text-4xl font-bold text-blue-600">{plan.price}</span>
-                      <span className="text-gray-600 ml-1">{plan.duration}</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link to="/register" className="block">
-                    <Button 
-                      variant={plan.buttonVariant}
-                      className={`w-full ${plan.popular ? 'bg-yellow-400 hover:bg-yellow-500 text-black' : ''}`}
-                    >
-                      {plan.buttonText}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Tudo que você precisa em um só lugar
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span className="text-gray-700">{benefit}</span>
-                  </div>
-                ))}
+            <Card className="border-2 border-blue-600 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm">
+                  Recomendado
+                </span>
               </div>
-              <div className="mt-8">
-                <Link to="/register">
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                    Começar agora
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-8 rounded-lg">
-              <div className="text-center mb-6">
-                <HeartHandshake className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Suporte Dedicado
-                </h3>
-                <p className="text-gray-600">
-                  Nossa equipe está aqui para ajudar você a ter sucesso
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-white p-4 rounded-lg">
-                  <Clock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                  <div className="text-sm font-semibold text-gray-900">24/7</div>
-                  <div className="text-xs text-gray-600">Suporte</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg">
-                  <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                  <div className="text-sm font-semibold text-gray-900">Equipe</div>
-                  <div className="text-xs text-gray-600">Especializada</div>
-                </div>
-              </div>
-            </div>
+              <CardHeader>
+                <CardTitle className="text-2xl">Plano Pro</CardTitle>
+                <CardDescription>Para crescer</CardDescription>
+                <div className="text-3xl font-bold">R$ 29,90<span className="text-lg">/mês</span></div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-gray-600">
+                  <li>• Produtos ilimitados</li>
+                  <li>• Catálogo online</li>
+                  <li>• Relatórios avançados</li>
+                  <li>• Usuários ilimitados</li>
+                  <li>• Exportação de dados</li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Store className="h-8 w-8 text-blue-400" />
-              <span className="ml-2 text-2xl font-bold">MKsimplo</span>
-            </div>
-            <p className="text-gray-400 mb-8">
-              Simplifique a gestão da sua loja com tecnologia moderna
-            </p>
-            <Link to="/register">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="bg-transparent border-white text-white hover:bg-white hover:text-gray-900"
-              >
-                Começar agora
-              </Button>
-            </Link>
-          </div>
+      <footer className="bg-gray-900 text-white py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p>&copy; 2024 MKsimplo. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
